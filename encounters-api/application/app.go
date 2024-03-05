@@ -16,10 +16,11 @@ import (
 type App struct {
 	router http.Handler
 	db     *gorm.DB
+	config Config
 }
 
-func New() *App {
-	connectionURL := "postgres://postgres:super@localhost:5432/test_soa"
+func New(config Config) *App {
+	connectionURL := config.PostgresAddress
 	db, err := gorm.Open(postgres.Open(connectionURL), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
@@ -34,7 +35,8 @@ func New() *App {
 	}
 
 	app := &App{
-		db: db,
+		db:     db,
+		config: config,
 	}
 
 	app.loadRoutes()
@@ -44,7 +46,7 @@ func New() *App {
 
 func (a *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    ":3000",
+		Addr:    fmt.Sprintf(":%d", a.config.ServerPort),
 		Handler: a.router,
 	}
 
