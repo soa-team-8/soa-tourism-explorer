@@ -2,6 +2,7 @@ package application
 
 import (
 	"encounters/handler"
+	"encounters/repository/encounter"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func loadRoutes() *mux.Router {
+func (a *App) loadRoutes() {
 	router := mux.NewRouter()
 	router.Use(loggerMiddleware)
 
@@ -18,13 +19,17 @@ func loadRoutes() *mux.Router {
 	}).Methods("GET")
 
 	encountersRouter := router.PathPrefix("/encounters").Subrouter()
-	loadEncounterRoutes(encountersRouter)
+	a.loadEncounterRoutes(encountersRouter)
 
-	return router
+	a.router = router
 }
 
-func loadEncounterRoutes(router *mux.Router) {
-	encounterHandler := &handler.Encounter{}
+func (a *App) loadEncounterRoutes(router *mux.Router) {
+	encounterHandler := &handler.Encounter{
+		Repo: &encounter.PostgresRepo{
+			DB: a.db,
+		},
+	}
 
 	router.HandleFunc("/", encounterHandler.Create).Methods("POST")
 	router.HandleFunc("/", encounterHandler.GetAll).Methods("GET")

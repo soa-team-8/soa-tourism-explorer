@@ -18,12 +18,12 @@ func loadRoutes() *mux.Router {
 	}).Methods("GET")
 
 	toursRouter := router.PathPrefix("/tours").Subrouter()
-	loadEncounterRoutes(toursRouter)
+	loadTourRoutes(toursRouter)
 
 	return router
 }
 
-func loadEncounterRoutes(router *mux.Router) {
+func loadTourRoutes(router *mux.Router) {
 	toursRouter := &handler.Tour{}
 
 	router.HandleFunc("/", toursRouter.Create).Methods("POST")

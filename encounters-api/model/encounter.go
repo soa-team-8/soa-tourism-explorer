@@ -17,7 +17,7 @@ const (
 )
 
 type Encounter struct {
-	// AuthorID
+	AuthorID    uint64          `json:"author_id"`
 	ID          uint64          `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
