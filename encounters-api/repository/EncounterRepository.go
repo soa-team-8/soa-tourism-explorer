@@ -1,4 +1,4 @@
-package encounter
+package repository
 
 import (
 	"context"
