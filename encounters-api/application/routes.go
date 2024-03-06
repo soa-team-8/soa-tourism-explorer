@@ -2,7 +2,7 @@ package application
 
 import (
 	"encounters/handler"
-	"encounters/repository/encounter"
+	encounter "encounters/repository"
 	"fmt"
 	"net/http"
 	"time"
@@ -25,8 +25,8 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterHandler := &handler.Encounter{
-		Repo: &encounter.PostgresRepo{
+	encounterHandler := &handler.EncounterHandler{
+		Repo: &encounter.EncounterRepository{
 			DB: a.db,
 		},
 	}

@@ -7,11 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type PostgresRepo struct {
+type EncounterRepository struct {
 	DB *gorm.DB
 }
 
-func (r *PostgresRepo) Save(ctx context.Context, encounter model.Encounter) error {
+func (r *EncounterRepository) Save(ctx context.Context, encounter model.Encounter) error {
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
 		return result.Error
@@ -19,7 +19,7 @@ func (r *PostgresRepo) Save(ctx context.Context, encounter model.Encounter) erro
 	return nil
 }
 
-func (r *PostgresRepo) FindByID(ctx context.Context, id uint64) (*model.Encounter, error) {
+func (r *EncounterRepository) FindByID(ctx context.Context, id uint64) (*model.Encounter, error) {
 	var encounter model.Encounter
 
 	if err := r.DB.First(&encounter, id).Error; err != nil {
@@ -29,7 +29,7 @@ func (r *PostgresRepo) FindByID(ctx context.Context, id uint64) (*model.Encounte
 	return &encounter, nil
 }
 
-func (r *PostgresRepo) DeleteByID(ctx context.Context, id uint64) error {
+func (r *EncounterRepository) DeleteByID(ctx context.Context, id uint64) error {
 	result := r.DB.Delete(&model.Encounter{}, id)
 	if result.Error != nil {
 		return result.Error
@@ -40,7 +40,7 @@ func (r *PostgresRepo) DeleteByID(ctx context.Context, id uint64) error {
 	return nil
 }
 
-func (r *PostgresRepo) FindAll(ctx context.Context) ([]model.Encounter, error) {
+func (r *EncounterRepository) FindAll(ctx context.Context) ([]model.Encounter, error) {
 	var encounters []model.Encounter
 	if err := r.DB.Find(&encounters).Error; err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (r *PostgresRepo) FindAll(ctx context.Context) ([]model.Encounter, error) {
 	return encounters, nil
 }
 
-func (r *PostgresRepo) Update(ctx context.Context, encounter model.Encounter) error {
+func (r *EncounterRepository) Update(ctx context.Context, encounter model.Encounter) error {
 	result := r.DB.Save(&encounter)
 	if result.Error != nil {
 		return result.Error

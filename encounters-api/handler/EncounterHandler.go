@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"encounters/model"
-	"encounters/repository/encounter"
+	encounter "encounters/repository"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -16,11 +16,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type Encounter struct {
-	Repo *encounter.PostgresRepo
+type EncounterHandler struct {
+	Repo *encounter.EncounterRepository
 }
 
-func (e *Encounter) Create(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
 	newEncounter, err := decodeEncounter(req.Body)
 	if err != nil {
 		handleError(resp, err, http.StatusBadRequest)
@@ -35,7 +35,7 @@ func (e *Encounter) Create(resp http.ResponseWriter, req *http.Request) {
 	writeResponse(resp, http.StatusCreated, "Encounter created successfully")
 }
 
-func (e *Encounter) GetAll(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	encounters, err := e.Repo.FindAll(req.Context())
 	if err != nil {
 		handleError(resp, err, http.StatusInternalServerError)
@@ -45,7 +45,7 @@ func (e *Encounter) GetAll(resp http.ResponseWriter, req *http.Request) {
 	writeJSONResponse(resp, http.StatusOK, encounters)
 }
 
-func (e *Encounter) GetByID(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
 	id, err := getEncounterIDFromRequest(req)
 	if err != nil {
 		handleError(resp, err, http.StatusBadRequest)
@@ -61,7 +61,7 @@ func (e *Encounter) GetByID(resp http.ResponseWriter, req *http.Request) {
 	writeJSONResponse(resp, http.StatusOK, foundEncounter)
 }
 
-func (e *Encounter) UpdateByID(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
 	id, err := getEncounterIDFromRequest(req)
 	if err != nil {
 		handleError(resp, err, http.StatusBadRequest)
@@ -84,7 +84,7 @@ func (e *Encounter) UpdateByID(resp http.ResponseWriter, req *http.Request) {
 	writeResponse(resp, http.StatusOK, "Encounter updated successfully")
 }
 
-func (e *Encounter) DeleteByID(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
 	id, err := getEncounterIDFromRequest(req)
 	if err != nil {
 		handleError(resp, err, http.StatusBadRequest)
