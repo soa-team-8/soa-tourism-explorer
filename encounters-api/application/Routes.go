@@ -3,6 +3,7 @@ package application
 import (
 	"encounters/handler"
 	encounter "encounters/repository"
+
 	"fmt"
 	"net/http"
 	"time"
