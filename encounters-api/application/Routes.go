@@ -2,7 +2,8 @@ package application
 
 import (
 	"encounters/handler"
-	encounter "encounters/repository"
+	"encounters/repo"
+	"encounters/service"
 
 	"fmt"
 	"net/http"
@@ -26,10 +27,14 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterHandler := &handler.EncounterHandler{
-		Repo: &encounter.EncounterRepository{
+	encounterService := &service.EncounterService{
+		EncounterRepo: &repo.EncounterRepository{
 			DB: a.db,
 		},
+	}
+
+	encounterHandler := &handler.EncounterHandler{
+		EncounterService: encounterService,
 	}
 
 	router.HandleFunc("/", encounterHandler.Create).Methods("POST")

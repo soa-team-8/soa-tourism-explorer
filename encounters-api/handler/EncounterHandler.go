@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"encounters/model"
-	encounter "encounters/repository"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,10 +13,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
+
+	"encounters/service"
 )
 
 type EncounterHandler struct {
-	Repo *encounter.EncounterRepository
+	EncounterService *service.EncounterService
 }
 
 func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
@@ -27,7 +28,7 @@ func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := e.Repo.Save(req.Context(), *newEncounter); err != nil {
+	if err := e.EncounterService.Create(*newEncounter); err != nil {
 		handleError(resp, err, http.StatusInternalServerError)
 		return
 	}
@@ -36,7 +37,7 @@ func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
-	encounters, err := e.Repo.FindAll(req.Context())
+	encounters, err := e.EncounterService.GetAll()
 	if err != nil {
 		handleError(resp, err, http.StatusInternalServerError)
 		return
@@ -52,7 +53,7 @@ func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	foundEncounter, err := e.Repo.FindByID(req.Context(), id)
+	foundEncounter, err := e.EncounterService.GetByID(id)
 	if err != nil {
 		handleError(resp, err, http.StatusInternalServerError)
 		return
@@ -76,7 +77,7 @@ func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Reques
 
 	updatedEncounter.ID = id
 
-	if err := e.Repo.Update(req.Context(), *updatedEncounter); err != nil {
+	if err := e.EncounterService.Update(*updatedEncounter); err != nil {
 		handleError(resp, err, http.StatusInternalServerError)
 		return
 	}
@@ -91,9 +92,9 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if err := e.Repo.DeleteByID(req.Context(), id); err != nil {
+	if err := e.EncounterService.DeleteByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			handleError(resp, errors.New("Encounter not found"), http.StatusNotFound)
+			handleError(resp, errors.New("encounter not found"), http.StatusNotFound)
 		} else {
 			handleError(resp, err, http.StatusInternalServerError)
 		}
@@ -102,8 +103,6 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 
 	writeResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
-
-// Helper functions
 
 func decodeEncounter(body io.Reader) (*model.Encounter, error) {
 	var newEncounter model.Encounter
@@ -133,37 +132,15 @@ func writeResponse(resp http.ResponseWriter, statusCode int, message string) {
 }
 
 /*
-func (e *Encounter) Create(resp http.ResponseWriter, req *http.Request) {
-	// Define the JSON string representing the encounter
-	jsonData := `{
-		"author_id": 123,
-		"id": 456,
-		"name": "Exploration",
-		"description": "An adventure in the wilderness",
-		"XP": 100,
-		"status": 2,
-		"type": 1,
-		"longitude": 45.6789,
-		"latitude": 23.4567
-	}`
-
-	// Decode the JSON string into an Encounter struct
-	var newEncounter model.Encounter
-	err := json.Unmarshal([]byte(jsonData), &newEncounter)
-	if err != nil {
-		http.Error(resp, "Failed to decode encounter JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Call the Insert method of the repository to insert the new Encounter into the database
-	err = e.Repo.Save(req.Context(), newEncounter)
-	if err != nil {
-		http.Error(resp, fmt.Sprintf("Failed to create encounter: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Respond with success message
-	resp.WriteHeader(http.StatusCreated)
-	resp.Write([]byte("Encounter created successfully"))
+{
+	"author_id": 123,
+	"id": 456,
+	"name": "Exploration",
+	"description": "An adventure in the wilderness",
+	"XP": 100,
+	"status": 2,
+	"type": 1,
+	"longitude": 45.6789,
+	"latitude": 23.4567
 }
 */
