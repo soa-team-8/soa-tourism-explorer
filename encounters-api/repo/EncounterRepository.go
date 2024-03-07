@@ -11,6 +11,13 @@ type EncounterRepository struct {
 }
 
 func (r *EncounterRepository) Save(encounter model.Encounter) error {
+	newID, err := r.generateID()
+	if err != nil {
+		return err
+	}
+
+	encounter.ID = newID
+
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
 		return result.Error
@@ -53,4 +60,12 @@ func (r *EncounterRepository) Update(encounter model.Encounter) error {
 		return result.Error
 	}
 	return nil
+}
+
+func (r *EncounterRepository) generateID() (uint64, error) {
+	var maxID uint64
+	if err := r.DB.Model(&model.Encounter{}).Select("COALESCE(MAX(id), 0)").Scan(&maxID).Error; err != nil {
+		return 0, err
+	}
+	return maxID + 1, nil
 }
