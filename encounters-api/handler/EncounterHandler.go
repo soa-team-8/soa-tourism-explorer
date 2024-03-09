@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"encounters/model"
+	"encounters/dto"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -104,8 +104,8 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 	writeResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
 
-func decodeEncounter(body io.Reader) (*model.Encounter, error) {
-	var newEncounter model.Encounter
+func decodeEncounter(body io.Reader) (*dto.EncounterDto, error) {
+	var newEncounter dto.EncounterDto
 	err := json.NewDecoder(body).Decode(&newEncounter)
 	return &newEncounter, err
 }

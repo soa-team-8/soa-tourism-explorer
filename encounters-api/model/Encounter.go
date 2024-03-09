@@ -17,7 +17,7 @@ const (
 )
 
 type Encounter struct {
-	ID          uint64          `json:"id" sql:"type:serial PRIMARY KEY"`
+	ID          uint64          `json:"id" gorm:"primaryKey;autoIncrement"`
 	AuthorID    uint64          `json:"author_id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`

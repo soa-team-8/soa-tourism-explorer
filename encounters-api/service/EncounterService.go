@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encounters/dto"
 	"encounters/model"
 	repo "encounters/repo"
 	"fmt"
@@ -10,7 +11,9 @@ type EncounterService struct {
 	EncounterRepo *repo.EncounterRepository
 }
 
-func (service *EncounterService) Create(encounter model.Encounter) error {
+func (service *EncounterService) Create(dto dto.EncounterDto) error {
+	encounter := dto.ToModel()
+
 	err := service.EncounterRepo.Save(encounter)
 	if err != nil {
 		return fmt.Errorf("encounter cannot be created: %v", err)
@@ -42,7 +45,8 @@ func (service *EncounterService) DeleteByID(id uint64) error {
 	return nil
 }
 
-func (service *EncounterService) Update(encounter model.Encounter) error {
+func (service *EncounterService) Update(dto dto.EncounterDto) error {
+	encounter := dto.ToModel()
 	err := service.EncounterRepo.Update(encounter)
 	if err != nil {
 		return fmt.Errorf("encounter cannot be updated: %v", err)
