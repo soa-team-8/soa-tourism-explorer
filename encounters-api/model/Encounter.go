@@ -17,8 +17,8 @@ const (
 )
 
 type Encounter struct {
+	ID          uint64          `json:"id" sql:"type:serial PRIMARY KEY"`
 	AuthorID    uint64          `json:"author_id"`
-	ID          uint64          `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	XP          uint64          `json:"XP"`
