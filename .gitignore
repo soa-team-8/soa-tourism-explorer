@@ -15,7 +15,25 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
+go.mod
+go.sum
 
 # Go workspace file
 go.work
+
+# Output files from coverage tools
+*.cov
+*.coverage
+
+# Build output directory
+bin/
+
+# IDE specific directories
+.idea/
+.vscode/
+*.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
