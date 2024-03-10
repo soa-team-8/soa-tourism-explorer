@@ -20,12 +20,12 @@ type EquipmentHandler struct {
 func (e *EquipmentHandler) Create(resp http.ResponseWriter, req *http.Request) {
 	equipment, err := e.HttpUtils.Decode(req.Body, &model.Equipment{})
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to create equipment: %w", err), http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := e.EquipmentService.Create(*equipment.(*model.Equipment)); err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to create equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -41,9 +41,9 @@ func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
 
 	if err := e.EquipmentService.Delete(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			e.HttpUtils.HandleError(resp, errors.New("equipment not found"), http.StatusNotFound)
+			e.HttpUtils.HandleError(resp, err, http.StatusNotFound)
 		} else {
-			e.HttpUtils.HandleError(resp, fmt.Errorf("failed to delete equipment: %w", err), http.StatusInternalServerError)
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -67,7 +67,7 @@ func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {
 	updatedEquipment.(*model.Equipment).ID = id
 
 	if err := e.EquipmentService.Update(*updatedEquipment.(*model.Equipment)); err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to update equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (e *EquipmentHandler) GetByID(resp http.ResponseWriter, req *http.Request) 
 
 	equipment, err := e.EquipmentService.GetByID(id)
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -98,7 +98,7 @@ func (e *EquipmentHandler) GetByID(resp http.ResponseWriter, req *http.Request) 
 func (e *EquipmentHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	equipment, err := e.EquipmentService.GetAll()
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get all equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -108,19 +108,19 @@ func (e *EquipmentHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 func (e *EquipmentHandler) GetAllPaged(resp http.ResponseWriter, req *http.Request) {
 	page, err := strconv.Atoi(req.URL.Query().Get("page"))
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid page number: %v", err), http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	pageSize, err := strconv.Atoi(req.URL.Query().Get("pageSize"))
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid pageSize number: %v", err), http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	equipment, err := e.EquipmentService.GetAllPaged(page, pageSize)
 	if err != nil {
-		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get paginated equipment: %v", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 

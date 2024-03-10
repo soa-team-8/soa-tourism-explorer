@@ -25,13 +25,21 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadTourRoutes(router *mux.Router) {
-	toursRouter := &handler.Tour{}
+	tourService := &service.TourService{
+		TourRepository: &repository.TourRepository{
+			DB: a.db,
+		},
+	}
 
-	router.HandleFunc("", toursRouter.Create).Methods("POST")
-	router.HandleFunc("", toursRouter.GetAll).Methods("GET")
-	router.HandleFunc("/{id}", toursRouter.Update).Methods("PUT")
-	router.HandleFunc("/{id}", toursRouter.Delete).Methods("DELETE")
-	router.HandleFunc("/{id}", toursRouter.GetByID).Methods("GET")
+	tourHandler := &handler.TourHandler{
+		TourService: tourService,
+	}
+
+	router.HandleFunc("", tourHandler.Create).Methods("POST")
+	router.HandleFunc("", tourHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", tourHandler.Update).Methods("PUT")
+	router.HandleFunc("/{id}", tourHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/{id}", tourHandler.GetByID).Methods("GET")
 }
 
 func (a *App) loadEquipmentRoutes(router *mux.Router) {
