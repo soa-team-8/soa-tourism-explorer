@@ -39,6 +39,14 @@ func (service *EquipmentService) GetAll() ([]model.Equipment, error) {
 	return equipment, nil
 }
 
+func (service *EquipmentService) GetAllPaged(page, pageSize int) ([]model.Equipment, error) {
+	equipment, err := service.EquipmentRepository.FindAllPaged(page, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all equipment: %w", err)
+	}
+	return equipment, nil
+}
+
 func (service *EquipmentService) GetByID(id uint64) (*model.Equipment, error) {
 	equipment, err := service.EquipmentRepository.FindByID(id)
 	if err != nil {

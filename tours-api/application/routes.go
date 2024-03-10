@@ -47,6 +47,7 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 
 	router.HandleFunc("", equipmentHandler.Create).Methods("POST")
 	router.HandleFunc("", equipmentHandler.GetAll).Methods("GET")
+	router.HandleFunc("/paged", equipmentHandler.GetAllPaged).Methods("GET")
 	router.HandleFunc("/{id}", equipmentHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", equipmentHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", equipmentHandler.GetByID).Methods("GET")

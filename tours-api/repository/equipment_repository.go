@@ -57,6 +57,16 @@ func (repo *EquipmentRepository) FindAll() ([]model.Equipment, error) {
 	return equipment, nil
 }
 
+func (repo *EquipmentRepository) FindAllPaged(page, pageSize int) ([]model.Equipment, error) {
+	var equipment []model.Equipment
+	offset := (page - 1) * pageSize
+	result := repo.DB.Offset(offset).Limit(pageSize).Find(&equipment)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return equipment, nil
+}
+
 func (repo *EquipmentRepository) FindByID(id uint64) (*model.Equipment, error) {
 	var equipment model.Equipment
 	if err := repo.DB.First(&equipment, id).Error; err != nil {

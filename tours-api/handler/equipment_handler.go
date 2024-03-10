@@ -106,6 +106,28 @@ func (e *EquipmentHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	writeJSONResponse(resp, http.StatusOK, equipment)
 }
 
+func (e *EquipmentHandler) GetAllPaged(resp http.ResponseWriter, req *http.Request) {
+	page, err := strconv.Atoi(req.URL.Query().Get("page"))
+	if err != nil {
+		handleError(resp, fmt.Errorf("invalid page number: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	pageSize, err := strconv.Atoi(req.URL.Query().Get("pageSize"))
+	if err != nil {
+		handleError(resp, fmt.Errorf("invalid pageSize number: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	equipment, err := e.EquipmentService.GetAllPaged(page, pageSize)
+	if err != nil {
+		handleError(resp, fmt.Errorf("failed to get paginated equipment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSONResponse(resp, http.StatusOK, equipment)
+}
+
 func decodeEquipment(body io.Reader) (*model.Equipment, error) {
 	var equipment model.Equipment
 	err := json.NewDecoder(body).Decode(&equipment)
@@ -131,7 +153,13 @@ func writeJSONResponse(resp http.ResponseWriter, statusCode int, data interface{
 	}
 }
 
-func writeResponse(resp http.ResponseWriter, statusCode int, message string) {
+func writeResponse(resp http.ResponseWriter, statusCode int, data interface{}) {
+	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(statusCode)
-	resp.Write([]byte(message))
+	err := json.NewEncoder(resp).Encode(data)
+	if err != nil {
+		// Handle encoding error
+		http.Error(resp, fmt.Sprintf("Error encoding JSON response: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
