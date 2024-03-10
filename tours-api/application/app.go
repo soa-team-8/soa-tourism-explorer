@@ -3,31 +3,69 @@ package application
 import (
 	"context"
 	"fmt"
+	"gorm.io/driver/postgres"
 	"net/http"
+	"time"
+	"tours/model"
+
+	"gorm.io/gorm"
 )
 
 type App struct {
 	router http.Handler
+	db     *gorm.DB
+	config Config
 }
 
-func New() *App {
-	app := &App{
-		router: loadRoutes(),
+func New(config Config) *App {
+	connectionURL := config.PostgresAddress
+	db, err := gorm.Open(postgres.Open(connectionURL), &gorm.Config{})
+	if err != nil {
+		fmt.Println(err)
+		return nil
 	}
+
+	err = db.AutoMigrate(&model.Equipment{})
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	app := &App{
+		db:     db,
+		config: config,
+	}
+
+	app.loadRoutes()
 
 	return app
 }
 
 func (a *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    ":3030",
+		Addr:    fmt.Sprintf(":%d", a.config.ServerPort),
 		Handler: a.router,
 	}
 
-	err := server.ListenAndServe()
-	if err != nil {
-		return fmt.Errorf("Failed to start server: %n", err)
-	}
+	fmt.Println("Starting server")
 
-	return nil
+	ch := make(chan error, 1)
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			ch <- fmt.Errorf("failed to start server: %w", err)
+		}
+		close(ch)
+	}()
+
+	select {
+	case err := <-ch:
+		return err
+	case <-ctx.Done():
+		timeout, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		return server.Shutdown(timeout)
+	}
 }
