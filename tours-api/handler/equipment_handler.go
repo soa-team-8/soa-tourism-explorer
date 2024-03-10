@@ -1,165 +1,128 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"tours/model"
 	"tours/service"
+	"tours/utils"
 
-	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
 type EquipmentHandler struct {
 	EquipmentService *service.EquipmentService
+	HttpUtils        *utils.HttpUtils
 }
 
 func (e *EquipmentHandler) Create(resp http.ResponseWriter, req *http.Request) {
-	newEquipment, err := decodeEquipment(req.Body)
+	equipment, err := e.HttpUtils.Decode(req.Body, &model.Equipment{})
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to create equipment: %w", err), http.StatusBadRequest)
 		return
 	}
 
-	if err := e.EquipmentService.Create(*newEquipment); err != nil {
-		handleError(resp, fmt.Errorf("failed to create equipment: %w", err), http.StatusInternalServerError)
+	if err := e.EquipmentService.Create(*equipment.(*model.Equipment)); err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to create equipment: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	writeResponse(resp, http.StatusCreated, "Equipment created successfully")
+	e.HttpUtils.WriteResponse(resp, http.StatusCreated, "Equipment created successfully")
 }
 
 func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEquipmentIDFromRequest(req)
+	id, err := e.HttpUtils.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := e.EquipmentService.Delete(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			handleError(resp, errors.New("equipment not found"), http.StatusNotFound)
+			e.HttpUtils.HandleError(resp, errors.New("equipment not found"), http.StatusNotFound)
 		} else {
-			handleError(resp, fmt.Errorf("failed to delete equipment: %w", err), http.StatusInternalServerError)
+			e.HttpUtils.HandleError(resp, fmt.Errorf("failed to delete equipment: %w", err), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	writeResponse(resp, http.StatusOK, "Equipment deleted successfully")
+	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Equipment deleted successfully")
 }
 
 func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEquipmentIDFromRequest(req)
+	id, err := e.HttpUtils.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	updatedEquipment, err := decodeEquipment(req.Body)
+	updatedEquipment, err := e.HttpUtils.Decode(req.Body, &model.Equipment{})
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	updatedEquipment.ID = id
+	updatedEquipment.(*model.Equipment).ID = id
 
-	if err := e.EquipmentService.Update(*updatedEquipment); err != nil {
-		handleError(resp, fmt.Errorf("failed to update equipment: %w", err), http.StatusInternalServerError)
+	if err := e.EquipmentService.Update(*updatedEquipment.(*model.Equipment)); err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to update equipment: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	writeResponse(resp, http.StatusOK, "Equipment updated successfully")
+	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Equipment updated successfully")
 }
 
 func (e *EquipmentHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEquipmentIDFromRequest(req)
+	id, err := e.HttpUtils.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	equipment, err := e.EquipmentService.GetByID(id)
 	if err != nil {
-		handleError(resp, fmt.Errorf("failed to get equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get equipment: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	if equipment == nil {
-		handleError(resp, fmt.Errorf("equipment with ID %d not found", id), http.StatusNotFound)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("equipment with ID %d not found", id), http.StatusNotFound)
 		return
 	}
 
-	writeJSONResponse(resp, http.StatusOK, equipment)
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, equipment)
 }
 
 func (e *EquipmentHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	equipment, err := e.EquipmentService.GetAll()
 	if err != nil {
-		handleError(resp, fmt.Errorf("failed to get all equipment: %w", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get all equipment: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	writeJSONResponse(resp, http.StatusOK, equipment)
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, equipment)
 }
 
 func (e *EquipmentHandler) GetAllPaged(resp http.ResponseWriter, req *http.Request) {
 	page, err := strconv.Atoi(req.URL.Query().Get("page"))
 	if err != nil {
-		handleError(resp, fmt.Errorf("invalid page number: %v", err), http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid page number: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	pageSize, err := strconv.Atoi(req.URL.Query().Get("pageSize"))
 	if err != nil {
-		handleError(resp, fmt.Errorf("invalid pageSize number: %v", err), http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid pageSize number: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	equipment, err := e.EquipmentService.GetAllPaged(page, pageSize)
 	if err != nil {
-		handleError(resp, fmt.Errorf("failed to get paginated equipment: %v", err), http.StatusInternalServerError)
+		e.HttpUtils.HandleError(resp, fmt.Errorf("failed to get paginated equipment: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	writeJSONResponse(resp, http.StatusOK, equipment)
-}
-
-func decodeEquipment(body io.Reader) (*model.Equipment, error) {
-	var equipment model.Equipment
-	err := json.NewDecoder(body).Decode(&equipment)
-	return &equipment, err
-}
-
-func getEquipmentIDFromRequest(req *http.Request) (uint64, error) {
-	vars := mux.Vars(req)
-	idStr := vars["id"]
-	return strconv.ParseUint(idStr, 10, 64)
-}
-
-func handleError(resp http.ResponseWriter, err error, statusCode int) {
-	http.Error(resp, fmt.Sprintf("Error: %v", err), statusCode)
-}
-
-func writeJSONResponse(resp http.ResponseWriter, statusCode int, data interface{}) {
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(statusCode)
-	err := json.NewEncoder(resp).Encode(data)
-	if err != nil {
-		return
-	}
-}
-
-func writeResponse(resp http.ResponseWriter, statusCode int, data interface{}) {
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(statusCode)
-	err := json.NewEncoder(resp).Encode(data)
-	if err != nil {
-		// Handle encoding error
-		http.Error(resp, fmt.Sprintf("Error encoding JSON response: %v", err), http.StatusInternalServerError)
-		return
-	}
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, equipment)
 }
