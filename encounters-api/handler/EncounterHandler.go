@@ -13,15 +13,8 @@ import (
 )
 
 type EncounterHandler struct {
-	*utils.HttpUtils // Embedding the HttpUtils struct
+	*utils.HttpUtils
 	EncounterService *service.EncounterService
-}
-
-func NewEncounterHandler(httpUtils *utils.HttpUtils, service *service.EncounterService) *EncounterHandler {
-	return &EncounterHandler{
-		HttpUtils:        httpUtils,
-		EncounterService: service,
-	}
 }
 
 func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
@@ -39,7 +32,7 @@ func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
 	e.WriteResponse(resp, http.StatusCreated, "Encounter created successfully")
 }
 
-func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
+func (e *EncounterHandler) GetAll(resp http.ResponseWriter) {
 	encounters, err := e.EncounterService.GetAll()
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
@@ -106,17 +99,3 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 
 	e.WriteResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
-
-/*
-{
-	"author_id": 123,
-	"id": 456,
-	"name": "Exploration",
-	"description": "An adventure in the wilderness",
-	"XP": 100,
-	"status": 2,
-	"type": 1,
-	"longitude": 45.6789,
-	"latitude": 23.4567
-}
-*/

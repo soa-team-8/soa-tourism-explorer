@@ -21,8 +21,8 @@ type EncounterDto struct {
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
-	status := mapStatus(e.Status)
-	encounterType := mapType(e.Type)
+	status := mapStringToStatus(e.Status)
+	encounterType := mapStringToType(e.Type)
 
 	return model.Encounter{
 		ID:          uint64(e.ID),
@@ -37,7 +37,35 @@ func (e *EncounterDto) ToModel() model.Encounter {
 	}
 }
 
-func mapStatus(status string) model.EncounterStatus {
+func ToDtoList(encounters []model.Encounter) []EncounterDto {
+	encounterDtos := make([]EncounterDto, len(encounters))
+	for i, encounter := range encounters {
+		encounterDtos[i] = ToDto(encounter)
+	}
+	return encounterDtos
+}
+
+func ToDto(encounter model.Encounter) EncounterDto {
+	return EncounterDto{
+		AuthorID:          int64(encounter.AuthorID),
+		ID:                encounter.ID,
+		Name:              encounter.Name,
+		Description:       encounter.Description,
+		XP:                int(encounter.XP),
+		Status:            mapStatusToString(encounter.Status),
+		Type:              mapTypeToString(encounter.Type),
+		Longitude:         encounter.Longitude,
+		Latitude:          encounter.Latitude,
+		LocationLongitude: nil,
+		LocationLatitude:  nil,
+		Image:             nil,
+		Range:             nil,
+		RequiredPeople:    nil,
+		ActiveTouristsIDs: nil,
+	}
+}
+
+func mapStringToStatus(status string) model.EncounterStatus {
 	switch status {
 	case "Draft":
 		return model.Draft
@@ -49,7 +77,7 @@ func mapStatus(status string) model.EncounterStatus {
 	return model.Draft
 }
 
-func mapType(encounterType string) model.EncounterType {
+func mapStringToType(encounterType string) model.EncounterType {
 	switch encounterType {
 	case "Social":
 		return model.Social
@@ -60,4 +88,30 @@ func mapType(encounterType string) model.EncounterType {
 	}
 
 	return model.Social
+}
+
+func mapStatusToString(status model.EncounterStatus) string {
+	switch status {
+	case model.Draft:
+		return "Draft"
+	case model.Archived:
+		return "Archived"
+	case model.Published:
+		return "Published"
+	default:
+		return "Unknown"
+	}
+}
+
+func mapTypeToString(encounterType model.EncounterType) string {
+	switch encounterType {
+	case model.Social:
+		return "Social"
+	case model.Location:
+		return "Location"
+	case model.Misc:
+		return "Misc"
+	default:
+		return "Unknown"
+	}
 }

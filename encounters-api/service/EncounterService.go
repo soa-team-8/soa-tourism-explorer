@@ -2,7 +2,6 @@ package service
 
 import (
 	"encounters/dto"
-	"encounters/model"
 	repo "encounters/repo"
 	"fmt"
 )
@@ -21,20 +20,24 @@ func (service *EncounterService) Create(dto dto.EncounterDto) error {
 	return nil
 }
 
-func (service *EncounterService) GetByID(id uint64) (*model.Encounter, error) {
+func (service *EncounterService) GetByID(id uint64) (*dto.EncounterDto, error) {
 	encounter, err := service.EncounterRepo.FindByID(id)
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("Encounter with id %d not found", id))
+		return nil, fmt.Errorf("encounter with ID %d not found", id)
 	}
-	return encounter, nil
+
+	encounterDto := dto.ToDto(*encounter)
+	return &encounterDto, nil
 }
 
-func (service *EncounterService) GetAll() ([]model.Encounter, error) {
+func (service *EncounterService) GetAll() ([]dto.EncounterDto, error) {
 	encounters, err := service.EncounterRepo.FindAll()
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintln("Encounters not found"))
 	}
-	return encounters, nil
+
+	encounterDtos := dto.ToDtoList(encounters)
+	return encounterDtos, nil
 }
 
 func (service *EncounterService) DeleteByID(id uint64) error {

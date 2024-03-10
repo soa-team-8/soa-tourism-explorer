@@ -2,6 +2,8 @@ package repo
 
 import (
 	"encounters/model"
+	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -11,13 +13,6 @@ type EncounterRepository struct {
 }
 
 func (r *EncounterRepository) Save(encounter model.Encounter) error {
-	newID, err := r.generateID()
-	if err != nil {
-		return err
-	}
-
-	encounter.ID = newID
-
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
 		return result.Error
@@ -55,7 +50,16 @@ func (r *EncounterRepository) DeleteByID(id uint64) error {
 }
 
 func (r *EncounterRepository) Update(encounter model.Encounter) error {
-	// TO-DO proveri da li postoji taj sto treba da se updajtuje
+	// Check if the encounter exists in the database
+	exists, err := r.isExist(encounter.ID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("encounter with ID %d does not exist", encounter.ID)
+	}
+
+	// Update the encounter
 	result := r.DB.Save(&encounter)
 	if result.Error != nil {
 		return result.Error
@@ -63,10 +67,14 @@ func (r *EncounterRepository) Update(encounter model.Encounter) error {
 	return nil
 }
 
-func (r *EncounterRepository) generateID() (uint64, error) {
-	var maxID uint64
-	if err := r.DB.Model(&model.Encounter{}).Select("COALESCE(MAX(id), 0)").Scan(&maxID).Error; err != nil {
-		return 0, err
+func (r *EncounterRepository) isExist(id uint64) (bool, error) {
+	existingEncounter := model.Encounter{}
+	err := r.DB.First(&existingEncounter, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
 	}
-	return maxID + 1, nil
+	return true, nil
 }
