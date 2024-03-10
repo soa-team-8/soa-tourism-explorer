@@ -32,7 +32,7 @@ func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
 	e.WriteResponse(resp, http.StatusCreated, "Encounter created successfully")
 }
 
-func (e *EncounterHandler) GetAll(resp http.ResponseWriter) {
+func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	encounters, err := e.EncounterService.GetAll()
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)

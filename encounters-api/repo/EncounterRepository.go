@@ -59,7 +59,6 @@ func (r *EncounterRepository) Update(encounter model.Encounter) error {
 		return fmt.Errorf("encounter with ID %d does not exist", encounter.ID)
 	}
 
-	// Update the encounter
 	result := r.DB.Save(&encounter)
 	if result.Error != nil {
 		return result.Error
