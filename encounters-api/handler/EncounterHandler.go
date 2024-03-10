@@ -1,134 +1,110 @@
 package handler
 
 import (
-	"encoding/json"
 	"encounters/dto"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"errors"
 
-	"io"
-
-	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 
 	"encounters/service"
+	"encounters/utils"
 )
 
 type EncounterHandler struct {
+	*utils.HttpUtils // Embedding the HttpUtils struct
 	EncounterService *service.EncounterService
 }
 
+func NewEncounterHandler(httpUtils *utils.HttpUtils, service *service.EncounterService) *EncounterHandler {
+	return &EncounterHandler{
+		HttpUtils:        httpUtils,
+		EncounterService: service,
+	}
+}
+
 func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
-	newEncounter, err := decodeEncounter(req.Body)
+	newEncounter, err := e.Decode(req.Body, &dto.EncounterDto{})
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := e.EncounterService.Create(*newEncounter); err != nil {
-		handleError(resp, err, http.StatusInternalServerError)
+	if err := e.EncounterService.Create(*newEncounter.(*dto.EncounterDto)); err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	writeResponse(resp, http.StatusCreated, "Encounter created successfully")
+	e.WriteResponse(resp, http.StatusCreated, "Encounter created successfully")
 }
 
 func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	encounters, err := e.EncounterService.GetAll()
 	if err != nil {
-		handleError(resp, err, http.StatusInternalServerError)
+		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	writeJSONResponse(resp, http.StatusOK, encounters)
+	e.WriteJSONResponse(resp, http.StatusOK, encounters)
 }
 
 func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEncounterIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	foundEncounter, err := e.EncounterService.GetByID(id)
 	if err != nil {
-		handleError(resp, err, http.StatusInternalServerError)
+		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	writeJSONResponse(resp, http.StatusOK, foundEncounter)
+	e.WriteJSONResponse(resp, http.StatusOK, foundEncounter)
 }
 
 func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEncounterIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	updatedEncounter, err := decodeEncounter(req.Body)
+	updatedEncounter, err := e.Decode(req.Body, &dto.EncounterDto{})
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	updatedEncounter.ID = id
+	updatedEncounter.(*dto.EncounterDto).ID = id
 
-	if err := e.EncounterService.Update(*updatedEncounter); err != nil {
-		handleError(resp, err, http.StatusInternalServerError)
+	if err := e.EncounterService.Update(*updatedEncounter.(*dto.EncounterDto)); err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	writeResponse(resp, http.StatusOK, "Encounter updated successfully")
+	e.WriteResponse(resp, http.StatusOK, "Encounter updated successfully")
 }
 
 func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := getEncounterIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req)
 	if err != nil {
-		handleError(resp, err, http.StatusBadRequest)
+		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	if err := e.EncounterService.DeleteByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			handleError(resp, errors.New("encounter not found"), http.StatusNotFound)
+			e.HandleError(resp, errors.New("encounter not found"), http.StatusNotFound)
 		} else {
-			handleError(resp, err, http.StatusInternalServerError)
+			e.HandleError(resp, err, http.StatusInternalServerError)
 		}
 		return
 	}
 
-	writeResponse(resp, http.StatusOK, "Encounter deleted successfully")
-}
-
-func decodeEncounter(body io.Reader) (*dto.EncounterDto, error) {
-	var newEncounter dto.EncounterDto
-	err := json.NewDecoder(body).Decode(&newEncounter)
-	return &newEncounter, err
-}
-
-func getEncounterIDFromRequest(req *http.Request) (uint64, error) {
-	vars := mux.Vars(req)
-	idStr := vars["id"]
-	return strconv.ParseUint(idStr, 10, 64)
-}
-
-func handleError(resp http.ResponseWriter, err error, statusCode int) {
-	http.Error(resp, fmt.Sprintf("Error: %v", err), statusCode)
-}
-
-func writeJSONResponse(resp http.ResponseWriter, statusCode int, data interface{}) {
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(statusCode)
-	json.NewEncoder(resp).Encode(data)
-}
-
-func writeResponse(resp http.ResponseWriter, statusCode int, message string) {
-	resp.WriteHeader(statusCode)
-	resp.Write([]byte(message))
+	e.WriteResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
 
 /*
