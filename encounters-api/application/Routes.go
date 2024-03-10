@@ -37,8 +37,8 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 		EncounterService: encounterService,
 	}
 
-	router.HandleFunc("/", encounterHandler.Create).Methods("POST")
-	router.HandleFunc("/", encounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("", encounterHandler.Create).Methods("POST")
+	router.HandleFunc("", encounterHandler.GetAll).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")

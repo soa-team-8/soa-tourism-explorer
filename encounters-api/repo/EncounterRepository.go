@@ -55,6 +55,7 @@ func (r *EncounterRepository) DeleteByID(id uint64) error {
 }
 
 func (r *EncounterRepository) Update(encounter model.Encounter) error {
+	// TO-DO proveri da li postoji taj sto treba da se updajtuje
 	result := r.DB.Save(&encounter)
 	if result.Error != nil {
 		return result.Error
