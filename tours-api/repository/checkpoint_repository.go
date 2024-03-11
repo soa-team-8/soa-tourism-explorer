@@ -10,12 +10,12 @@ type CheckpointRepository struct {
 	DB *gorm.DB
 }
 
-func (repo *CheckpointRepository) Save(checkpoint model.Checkpoint) error {
+func (repo *CheckpointRepository) Save(checkpoint model.Checkpoint) (uint64, error) {
 	result := repo.DB.Create(&checkpoint)
 	if result.Error != nil {
-		return result.Error
+		return 0, result.Error
 	}
-	return nil
+	return checkpoint.ID, nil
 }
 
 func (repo *CheckpointRepository) Delete(id uint64) error {

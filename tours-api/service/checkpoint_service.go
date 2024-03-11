@@ -10,11 +10,12 @@ type CheckpointService struct {
 	CheckpointRepository *repository.CheckpointRepository
 }
 
-func (service *CheckpointService) Create(checkpoint model.Checkpoint) error {
-	if err := service.CheckpointRepository.Save(checkpoint); err != nil {
-		return fmt.Errorf("failed to create checkpoint: %w", err)
+func (service *CheckpointService) Create(checkpoint model.Checkpoint) (uint64, error) {
+	id, err := service.CheckpointRepository.Save(checkpoint)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create checkpoint: %w", err)
 	}
-	return nil
+	return id, nil
 }
 
 func (service *CheckpointService) Delete(id uint64) error {

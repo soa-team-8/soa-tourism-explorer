@@ -9,20 +9,22 @@ import (
 
 type CheckpointSecret struct {
 	Pictures    pq.StringArray `json:"pictures" gorm:"type:text[]"`
-	Description string         `json:"description" gorm:"not null;check:description != ''"`
+	Description string         `json:"description" `
 }
 
 type Checkpoint struct {
 	ID                    uint64           `json:"id" gorm:"primaryKey;autoIncrement"`
 	TourID                uint64           `json:"tour_id" gorm:"not null"`
-	AuthorID              uint64           `json:"author_id" gorm:"not null"`
+	AuthorID              uint64           `json:"AuthorID" gorm:"not null"`
 	Longitude             float64          `json:"longitude" gorm:"not null"`
 	Latitude              float64          `json:"latitude" gorm:"not null"`
 	Name                  string           `json:"name" gorm:"not null;check:name != ''"`
 	Description           string           `json:"description" gorm:"not null;check:description != ''"`
 	Pictures              pq.StringArray   `json:"pictures" gorm:"type:text[]"`
-	RequiredTimeInSeconds int              `json:"required_time_in_seconds" gorm:"not null"`
+	RequiredTimeInSeconds float64          `json:"RequiredTimeInSeconds" gorm:"not null;"`
 	Secret                CheckpointSecret `json:"secret" gorm:"type:jsonb"`
+	EncounterID           uint64           `json:"encounter_id"`
+	IsSecretPrerequisite  bool             `json:"is_secret_prerequisite"`
 }
 
 func (s *CheckpointSecret) Scan(value interface{}) error {

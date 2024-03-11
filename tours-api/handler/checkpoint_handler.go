@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 	"tours/model"
 	"tours/service"
 	"tours/utils"
@@ -16,18 +18,46 @@ type CheckpointHandler struct {
 }
 
 func (e *CheckpointHandler) Create(resp http.ResponseWriter, req *http.Request) {
-	checkpoint, err := e.HttpUtils.Decode(req.Body, &model.Checkpoint{})
+	err := req.ParseMultipartForm(10 << 20)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := e.CheckpointService.Create(*checkpoint.(*model.Checkpoint)); err != nil {
+	images := req.MultipartForm.File["pictures"]
+
+	imageService := service.NewImageService()
+	uploadedImageNames, err := imageService.UploadImages(images)
+	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	e.HttpUtils.WriteResponse(resp, http.StatusCreated, "Checkpoint created successfully")
+	checkpointDto := model.Checkpoint{}
+
+	err = json.NewDecoder(strings.NewReader(req.FormValue("checkpoint"))).Decode(&checkpointDto)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	checkpointDto.Pictures = uploadedImageNames
+
+	id, err := e.CheckpointService.Create(checkpointDto)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	checkpointDto.ID = id
+
+	resp.WriteHeader(http.StatusCreated)
+	resp.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(resp).Encode(checkpointDto)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
 }
 
 func (e *CheckpointHandler) Delete(resp http.ResponseWriter, req *http.Request) {
