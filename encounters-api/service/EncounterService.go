@@ -2,7 +2,7 @@ package service
 
 import (
 	"encounters/dto"
-	repo "encounters/repo"
+	"encounters/repo"
 	"fmt"
 )
 
@@ -10,14 +10,18 @@ type EncounterService struct {
 	EncounterRepo *repo.EncounterRepository
 }
 
-func (service *EncounterService) Create(dto dto.EncounterDto) error {
-	encounter := dto.ToModel()
+func (service *EncounterService) Create(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
+	encounter := encounterDto.ToModel()
 
-	err := service.EncounterRepo.Save(encounter)
+	savedEncounter, err := service.EncounterRepo.Save(encounter)
 	if err != nil {
-		return fmt.Errorf("encounter cannot be created: %v", err)
+		return dto.EncounterDto{}, fmt.Errorf("encounter cannot be created: %v", err)
 	}
-	return nil
+
+	savedEncounterDto := dto.ToDto(savedEncounter)
+
+	fmt.Println(savedEncounter.ID)
+	return savedEncounterDto, nil
 }
 
 func (service *EncounterService) GetByID(id uint64) (*dto.EncounterDto, error) {
@@ -48,11 +52,15 @@ func (service *EncounterService) DeleteByID(id uint64) error {
 	return nil
 }
 
-func (service *EncounterService) Update(dto dto.EncounterDto) error {
-	encounter := dto.ToModel()
-	err := service.EncounterRepo.Update(encounter)
+func (service *EncounterService) Update(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
+	encounter := encounterDto.ToModel()
+
+	updatedEncounter, err := service.EncounterRepo.Update(encounter)
 	if err != nil {
-		return fmt.Errorf("encounter cannot be updated: %v", err)
+		return dto.EncounterDto{}, fmt.Errorf("encounter cannot be updated: %v", err)
 	}
-	return nil
+
+	updatedEncounterDto := dto.ToDto(updatedEncounter)
+
+	return updatedEncounterDto, nil
 }

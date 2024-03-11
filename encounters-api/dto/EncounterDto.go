@@ -3,7 +3,7 @@ package dto
 import "encounters/model"
 
 type EncounterDto struct {
-	AuthorID          int64    `json:"author_id"`
+	AuthorID          uint64   `json:"authorId"`
 	ID                uint64   `json:"id"`
 	Name              string   `json:"name"`
 	Description       string   `json:"description"`
@@ -25,8 +25,8 @@ func (e *EncounterDto) ToModel() model.Encounter {
 	encounterType := mapStringToType(e.Type)
 
 	return model.Encounter{
-		ID:          uint64(e.ID),
-		AuthorID:    uint64(e.AuthorID),
+		ID:          e.ID,
+		AuthorID:    e.AuthorID,
 		Name:        e.Name,
 		Description: e.Description,
 		XP:          uint64(e.XP),
@@ -47,7 +47,7 @@ func ToDtoList(encounters []model.Encounter) []EncounterDto {
 
 func ToDto(encounter model.Encounter) EncounterDto {
 	return EncounterDto{
-		AuthorID:          int64(encounter.AuthorID),
+		AuthorID:          encounter.AuthorID,
 		ID:                encounter.ID,
 		Name:              encounter.Name,
 		Description:       encounter.Description,

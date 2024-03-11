@@ -18,18 +18,19 @@ type EncounterHandler struct {
 }
 
 func (e *EncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
-	newEncounter, err := e.Decode(req.Body, &dto.EncounterDto{})
+	newEncounterDto, err := e.Decode(req.Body, &dto.EncounterDto{})
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := e.EncounterService.Create(*newEncounter.(*dto.EncounterDto)); err != nil {
+	savedEncounterDto, err := e.EncounterService.Create(*newEncounterDto.(*dto.EncounterDto))
+	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	e.WriteResponse(resp, http.StatusCreated, "Encounter created successfully")
+	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
 }
 
 func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
@@ -65,20 +66,21 @@ func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	updatedEncounter, err := e.Decode(req.Body, &dto.EncounterDto{})
+	updatedEncounterDto, err := e.Decode(req.Body, &dto.EncounterDto{})
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	updatedEncounter.(*dto.EncounterDto).ID = id
+	updatedEncounterDto.(*dto.EncounterDto).ID = id
 
-	if err := e.EncounterService.Update(*updatedEncounter.(*dto.EncounterDto)); err != nil {
+	updatedEncounter, err := e.EncounterService.Update(*updatedEncounterDto.(*dto.EncounterDto))
+	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	e.WriteResponse(resp, http.StatusOK, "Encounter updated successfully")
+	e.WriteJSONResponse(resp, http.StatusOK, updatedEncounter)
 }
 
 func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {

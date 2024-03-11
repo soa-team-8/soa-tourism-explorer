@@ -2,7 +2,6 @@ package repo
 
 import (
 	"encounters/model"
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -12,12 +11,12 @@ type EncounterRepository struct {
 	DB *gorm.DB
 }
 
-func (r *EncounterRepository) Save(encounter model.Encounter) error {
+func (r *EncounterRepository) Save(encounter model.Encounter) (model.Encounter, error) {
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
-		return result.Error
+		return model.Encounter{}, result.Error
 	}
-	return nil
+	return encounter, nil
 }
 
 func (r *EncounterRepository) FindByID(id uint64) (*model.Encounter, error) {
@@ -49,31 +48,14 @@ func (r *EncounterRepository) DeleteByID(id uint64) error {
 	return nil
 }
 
-func (r *EncounterRepository) Update(encounter model.Encounter) error {
-	// Check if the encounter exists in the database
-	exists, err := r.isExist(encounter.ID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("encounter with ID %d does not exist", encounter.ID)
-	}
-
-	result := r.DB.Save(&encounter)
+func (r *EncounterRepository) Update(encounter model.Encounter) (model.Encounter, error) {
+	result := r.DB.Model(&model.Encounter{}).Where("id = ?", encounter.ID).Updates(&encounter)
 	if result.Error != nil {
-		return result.Error
+		return model.Encounter{}, result.Error
 	}
-	return nil
-}
+	if result.RowsAffected == 0 {
+		return model.Encounter{}, fmt.Errorf("encounter with ID %d does not exist", encounter.ID)
+	}
 
-func (r *EncounterRepository) isExist(id uint64) (bool, error) {
-	existingEncounter := model.Encounter{}
-	err := r.DB.First(&existingEncounter, id).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
+	return encounter, nil
 }
