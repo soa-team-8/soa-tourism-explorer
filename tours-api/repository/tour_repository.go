@@ -10,13 +10,12 @@ type TourRepository struct {
 	DB *gorm.DB
 }
 
-func (repo *TourRepository) Save(tour model.Tour) error {
+func (repo *TourRepository) Save(tour model.Tour) (uint64, error) {
 	result := repo.DB.Create(&tour)
 	if result.Error != nil {
-		return result.Error
+		return 0, result.Error
 	}
-
-	return nil
+	return tour.ID, nil
 }
 
 func (repo *TourRepository) Delete(id uint64) error {

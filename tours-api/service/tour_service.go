@@ -10,11 +10,12 @@ type TourService struct {
 	TourRepository *repository.TourRepository
 }
 
-func (service *TourService) Create(tour model.Tour) error {
-	if err := service.TourRepository.Save(tour); err != nil {
-		return fmt.Errorf("failed to create tour: %w", err)
+func (service *TourService) Create(tour model.Tour) (uint64, error) {
+	id, err := service.TourRepository.Save(tour)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create tour: %w", err)
 	}
-	return nil
+	return id, nil
 }
 
 func (service *TourService) Delete(id uint64) error {
