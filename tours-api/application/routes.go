@@ -21,6 +21,9 @@ func (a *App) loadRoutes() {
 	equipmentRouter := router.PathPrefix("/equipment").Subrouter()
 	a.loadEquipmentRoutes(equipmentRouter)
 
+	checkpointRouter := router.PathPrefix("/checkpoints").Subrouter()
+	a.loadCheckpointRoutes(checkpointRouter)
+
 	a.router = router
 }
 
@@ -59,6 +62,25 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", equipmentHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", equipmentHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", equipmentHandler.GetByID).Methods("GET")
+}
+
+func (a *App) loadCheckpointRoutes(router *mux.Router) {
+	checkpointService := &service.CheckpointService{
+		CheckpointRepository: &repository.CheckpointRepository{
+			DB: a.db,
+		},
+	}
+
+	checkpointHandler := &handler.CheckpointHandler{
+		CheckpointService: checkpointService,
+	}
+
+	router.HandleFunc("", checkpointHandler.Create).Methods("POST")
+	router.HandleFunc("", checkpointHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", checkpointHandler.Update).Methods("PUT")
+	router.HandleFunc("/{id}", checkpointHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/{id}", checkpointHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}/tour", checkpointHandler.GetAllByTourID).Methods("GET")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

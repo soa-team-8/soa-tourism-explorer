@@ -28,5 +28,5 @@ type Tour struct {
 	DifficultyLevel DifficultyLevel `json:"difficulty_level"`
 	TourStatus      TourStatus      `json:"tour_status"`
 	Price           float64         `json:"price"`
-	Tags            pq.StringArray  `gorm:"type:text[]"`
+	Tags            pq.StringArray  `json:"tags" gorm:"type:text[]"`
 }
