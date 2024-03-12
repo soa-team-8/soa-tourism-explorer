@@ -2,12 +2,14 @@ package service
 
 import (
 	"encounters/dto"
+	"encounters/model"
 	"encounters/repo"
 	"fmt"
 )
 
 type EncounterService struct {
-	EncounterRepo *repo.EncounterRepository
+	EncounterRepo           *repo.EncounterRepository
+	EncounterRequestService *EncounterRequestService
 }
 
 func (service *EncounterService) Create(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
@@ -63,4 +65,30 @@ func (service *EncounterService) Update(encounterDto dto.EncounterDto) (dto.Enco
 	updatedEncounterDto := dto.ToDto(updatedEncounter)
 
 	return updatedEncounterDto, nil
+}
+
+func (service *EncounterService) CreateTouristEncounter(encounterDto dto.EncounterDto, checkpointId int, isSecretPrerequisite bool, level int, userId uint64) (dto.EncounterDto, error) {
+	var encounter model.Encounter
+	if level >= 10 {
+		// logika za slučaj kada je level >= 10
+		if encounterDto.Type == "Location" {
+
+		} else if encounterDto.Type == "Social" {
+
+		} else {
+			encounter = encounterDto.ToModel()
+		}
+
+		savedEncounter, err := service.EncounterRepo.Save(encounter)
+		if err != nil {
+			return dto.EncounterDto{}, fmt.Errorf("encounter cannot be created: %v", err)
+		}
+
+		savedEncounterDto := dto.ToDto(savedEncounter)
+		encounterReqDto := dto.EncounterRequestDto{TouristId: userId, EncounterId: savedEncounterDto.ID, Status: "OnHold"}
+		service.EncounterRequestService.CreateEncounterRequest(encounterReqDto)
+		return savedEncounterDto, err
+	} else {
+		return encounterDto, fmt.Errorf("The tourist is not at level 10 or higher")
+	}
 }

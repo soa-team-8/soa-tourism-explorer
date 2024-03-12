@@ -37,11 +37,22 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 		EncounterService: encounterService,
 	}
 
+	touristEncounterHandler := &handler.TouristEncounterHandler{
+		EncounterService: encounterService,
+	}
+
 	router.HandleFunc("", encounterHandler.Create).Methods("POST")
 	router.HandleFunc("", encounterHandler.GetAll).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
+
+	router.HandleFunc("/tourist", touristEncounterHandler.Create).Methods("POST")
+	router.HandleFunc("/tourist", touristEncounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/tourist/{id}", touristEncounterHandler.GetByID).Methods("GET")
+	router.HandleFunc("/tourist/{id}", touristEncounterHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/tourist/{id}", touristEncounterHandler.DeleteByID).Methods("DELETE")
+	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", touristEncounterHandler.CreateTouristEncounter).Methods("POST")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {
