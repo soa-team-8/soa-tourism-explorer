@@ -24,12 +24,17 @@ func (a *App) loadRoutes() {
 	checkpointRouter := router.PathPrefix("/checkpoints").Subrouter()
 	a.loadCheckpointRoutes(checkpointRouter)
 
+	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
+
 	a.router = router
 }
 
 func (a *App) loadTourRoutes(router *mux.Router) {
 	tourService := &service.TourService{
 		TourRepository: &repository.TourRepository{
+			DB: a.db,
+		},
+		EquipmentRepository: &repository.EquipmentRepository{
 			DB: a.db,
 		},
 	}
@@ -43,6 +48,9 @@ func (a *App) loadTourRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", tourHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", tourHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", tourHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{tourID}/{equipmentID}/add", tourHandler.AddEquipmentToTour).Methods("PUT")
+	router.HandleFunc("/{tourID}/{equipmentID}/remove", tourHandler.RemoveEquipmentFromTour).Methods("PUT")
+	router.HandleFunc("/{authorID}/by-author", tourHandler.GetToursByAuthor).Methods("GET")
 }
 
 func (a *App) loadEquipmentRoutes(router *mux.Router) {
@@ -62,6 +70,7 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", equipmentHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", equipmentHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", equipmentHandler.GetByID).Methods("GET")
+	router.HandleFunc("/get-available/{id}", equipmentHandler.GetAvailableEquipment).Methods("POST")
 }
 
 func (a *App) loadCheckpointRoutes(router *mux.Router) {
@@ -82,6 +91,13 @@ func (a *App) loadCheckpointRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", checkpointHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}/tour", checkpointHandler.GetAllByTourID).Methods("GET")
 	router.HandleFunc("/{id}/checkpoint-secret", checkpointHandler.CreateOrUpdateCheckpointSecret).Methods("PUT")
+}
+
+func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	imageName := vars["imageName"]
+
+	http.ServeFile(resp, req, "wwwroot/images/"+imageName)
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

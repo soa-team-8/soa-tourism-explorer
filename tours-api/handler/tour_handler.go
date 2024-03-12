@@ -3,8 +3,10 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 	"tours/model"
 	"tours/service"
 	"tours/utils"
@@ -104,4 +106,79 @@ func (e *TourHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, tour)
+}
+
+func (e *TourHandler) AddEquipmentToTour(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tourID, err := strconv.ParseUint(vars["tourID"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	equipmentID, err := strconv.ParseUint(vars["equipmentID"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := e.TourService.AddEquipmentToTour(tourID, equipmentID); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedTour, err := e.TourService.GetByID(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, updatedTour)
+}
+
+func (e *TourHandler) RemoveEquipmentFromTour(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tourID, err := strconv.ParseUint(vars["tourID"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	equipmentID, err := strconv.ParseUint(vars["equipmentID"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := e.TourService.RemoveEquipmentFromTour(tourID, equipmentID); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedTour, err := e.TourService.GetByID(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, updatedTour)
+}
+
+func (e *TourHandler) GetToursByAuthor(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	authorIDStr := vars["authorID"]
+
+	authorID, err := strconv.ParseUint(authorIDStr, 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	tours, err := e.TourService.GetToursByAuthor(authorID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, tours)
 }

@@ -14,17 +14,17 @@ type CheckpointSecret struct {
 
 type Checkpoint struct {
 	ID                    uint64           `json:"id" gorm:"primaryKey;autoIncrement"`
-	TourID                uint64           `json:"tour_id" gorm:"not null"`
-	AuthorID              uint64           `json:"AuthorID" gorm:"not null"`
+	TourID                uint64           `json:"tourId" gorm:"not null"`
+	AuthorID              uint64           `json:"AuthorId" gorm:"not null"`
 	Longitude             float64          `json:"longitude" gorm:"not null"`
 	Latitude              float64          `json:"latitude" gorm:"not null"`
 	Name                  string           `json:"name" gorm:"not null;check:name != ''"`
 	Description           string           `json:"description" gorm:"not null;check:description != ''"`
 	Pictures              pq.StringArray   `json:"pictures" gorm:"type:text[]"`
-	RequiredTimeInSeconds float64          `json:"RequiredTimeInSeconds" gorm:"not null;"`
-	CheckpointSecret      CheckpointSecret `json:"CheckpointSecret" gorm:"type:jsonb"`
-	EncounterID           uint64           `json:"encounter_id"`
-	IsSecretPrerequisite  bool             `json:"is_secret_prerequisite"`
+	RequiredTimeInSeconds float64          `json:"requiredTimeInSeconds" gorm:"not null;"`
+	CheckpointSecret      CheckpointSecret `json:"checkpointSecret" gorm:"type:jsonb"`
+	EncounterID           uint64           `json:"encounterId"`
+	IsSecretPrerequisite  bool             `json:"isSecretPrerequisite"`
 }
 
 func (s *CheckpointSecret) Scan(value interface{}) error {
