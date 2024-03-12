@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,7 +49,16 @@ func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Equipment deleted successfully")
+	responseData := map[string]string{"message": "Equipment deleted successfully"}
+	jsonResponse, err := json.Marshal(responseData)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusOK)
+	resp.Write(jsonResponse)
 }
 
 func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {
@@ -71,7 +81,7 @@ func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Equipment updated successfully")
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, updatedEquipment)
 }
 
 func (e *EquipmentHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
