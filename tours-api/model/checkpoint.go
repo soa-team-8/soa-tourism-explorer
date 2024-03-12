@@ -22,7 +22,7 @@ type Checkpoint struct {
 	Description           string           `json:"description" gorm:"not null;check:description != ''"`
 	Pictures              pq.StringArray   `json:"pictures" gorm:"type:text[]"`
 	RequiredTimeInSeconds float64          `json:"RequiredTimeInSeconds" gorm:"not null;"`
-	Secret                CheckpointSecret `json:"secret" gorm:"type:jsonb"`
+	CheckpointSecret      CheckpointSecret `json:"CheckpointSecret" gorm:"type:jsonb"`
 	EncounterID           uint64           `json:"encounter_id"`
 	IsSecretPrerequisite  bool             `json:"is_secret_prerequisite"`
 }

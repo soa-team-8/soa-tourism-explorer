@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"tours/model"
 	"tours/repository"
@@ -54,4 +55,22 @@ func (service *CheckpointService) GetAllByTourID(tourID uint64) ([]model.Checkpo
 		return nil, fmt.Errorf("failed to get checkpoints for Tour with id %d: %w", tourID, err)
 	}
 	return checkpoints, nil
+}
+
+func (service *CheckpointService) CreateOrUpdateCheckpointSecret(id uint64, secret model.CheckpointSecret) error {
+	checkpoint, err := service.CheckpointRepository.FindByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve checkpoint with ID %d: %w", id, err)
+	}
+	if checkpoint == nil {
+		return errors.New("checkpoint not found")
+	}
+
+	checkpoint.CheckpointSecret = secret
+
+	if err := service.CheckpointRepository.Update(*checkpoint); err != nil {
+		return fmt.Errorf("failed to update checkpoint with ID %d: %w", id, err)
+	}
+
+	return nil
 }

@@ -81,6 +81,7 @@ func (a *App) loadCheckpointRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", checkpointHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", checkpointHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}/tour", checkpointHandler.GetAllByTourID).Methods("GET")
+	router.HandleFunc("/{id}/checkpoint-secret", checkpointHandler.CreateOrUpdateCheckpointSecret).Methods("PUT")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

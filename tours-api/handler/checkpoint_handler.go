@@ -33,31 +33,25 @@ func (e *CheckpointHandler) Create(resp http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	checkpointDto := model.Checkpoint{}
+	createdCheckpoint := model.Checkpoint{}
 
-	err = json.NewDecoder(strings.NewReader(req.FormValue("checkpoint"))).Decode(&checkpointDto)
+	err = json.NewDecoder(strings.NewReader(req.FormValue("checkpoint"))).Decode(&createdCheckpoint)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	checkpointDto.Pictures = uploadedImageNames
+	createdCheckpoint.Pictures = uploadedImageNames
 
-	id, err := e.CheckpointService.Create(checkpointDto)
+	id, err := e.CheckpointService.Create(createdCheckpoint)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	checkpointDto.ID = id
+	createdCheckpoint.ID = id
 
-	resp.WriteHeader(http.StatusCreated)
-	resp.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(resp).Encode(checkpointDto)
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
-		return
-	}
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, createdCheckpoint)
 }
 
 func (e *CheckpointHandler) Delete(resp http.ResponseWriter, req *http.Request) {
@@ -152,4 +146,46 @@ func (e *CheckpointHandler) GetAllByTourID(resp http.ResponseWriter, req *http.R
 	}
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, checkpoints)
+}
+
+func (e *CheckpointHandler) CreateOrUpdateCheckpointSecret(resp http.ResponseWriter, req *http.Request) {
+	err := req.ParseMultipartForm(10 << 20)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	images := req.MultipartForm.File["pictures"]
+	uploadedImageNames, err := service.NewImageService().UploadImages(images)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	var checkpointSecret model.CheckpointSecret
+	err = json.NewDecoder(strings.NewReader(req.FormValue("checkpointSecret"))).Decode(&checkpointSecret)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+	checkpointSecret.Pictures = uploadedImageNames
+
+	id, err := e.HttpUtils.GetIDFromRequest(req)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := e.CheckpointService.CreateOrUpdateCheckpointSecret(id, checkpointSecret); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedCheckpoint, err := e.CheckpointService.GetByID(id)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, updatedCheckpoint)
 }
