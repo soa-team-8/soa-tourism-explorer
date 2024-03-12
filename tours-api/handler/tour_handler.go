@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
@@ -31,13 +30,7 @@ func (e *TourHandler) Create(resp http.ResponseWriter, req *http.Request) {
 
 	tour.(*model.Tour).ID = id
 
-	resp.WriteHeader(http.StatusCreated)
-	resp.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(resp).Encode(tour)
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
-		return
-	}
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tour)
 }
 
 func (e *TourHandler) Delete(resp http.ResponseWriter, req *http.Request) {
