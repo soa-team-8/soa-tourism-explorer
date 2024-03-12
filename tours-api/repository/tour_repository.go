@@ -19,14 +19,28 @@ func (repo *TourRepository) Save(tour model.Tour) (uint64, error) {
 }
 
 func (repo *TourRepository) Delete(id uint64) error {
-	result := repo.DB.Delete(&model.Tour{}, id)
-	if result.Error != nil {
-		return result.Error
+	tx := repo.DB.Begin()
+
+	if err := tx.Delete(&model.TourEquipment{}, "tour_id = ?", id).Error; err != nil {
+		tx.Rollback()
+		return err
 	}
-	if result.RowsAffected == 0 {
+
+	if err := tx.Delete(&model.Checkpoint{}, "tour_id = ?", id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if result := tx.Delete(&model.Tour{}, id); result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	} else if result.RowsAffected == 0 {
+		tx.Rollback()
 		return gorm.ErrRecordNotFound
 	}
-	return nil
+
+	// commit the transaction if all operations were successful
+	return tx.Commit().Error
 }
 
 func (repo *TourRepository) Update(tour model.Tour) error {
