@@ -29,7 +29,7 @@ func (e *EquipmentHandler) Create(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	e.HttpUtils.WriteResponse(resp, http.StatusCreated, "Equipment created successfully")
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, equipment)
 }
 
 func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
