@@ -53,6 +53,8 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/tourist/{id}", touristEncounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/tourist/{id}", touristEncounterHandler.DeleteByID).Methods("DELETE")
 	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", touristEncounterHandler.CreateTouristEncounter).Methods("POST")
+	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.AcceptRequest).Methods("PUT")
+	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.RejectRequest).Methods("PUT")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

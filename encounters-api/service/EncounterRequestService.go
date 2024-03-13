@@ -8,11 +8,13 @@ import (
 
 // EncounterRequestService je servis za rad sa zahtevima za susrete
 type EncounterRequestService struct {
-	EncounterRequestRepo *repo.EncounterRequestDatabaseRepository
+	EncounterRequestRepo *repo.EncounterRequestRepository
+	EncounterService     *EncounterService
+	EncounterRepo        *repo.EncounterRepository
 }
 
 // NewEncounterRequestService kreira novi EncounterRequestService
-func NewEncounterRequestService(encounterRequestRepo *repo.EncounterRequestDatabaseRepository) *EncounterRequestService {
+func NewEncounterRequestService(encounterRequestRepo *repo.EncounterRequestRepository) *EncounterRequestService {
 	return &EncounterRequestService{EncounterRequestRepo: encounterRequestRepo}
 }
 
@@ -34,7 +36,8 @@ func (service *EncounterRequestService) AcceptEncounterRequest(id int) (dto.Enco
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be accepted: %v", err)
 	}
-
+	encouterToPublishDto, err := service.EncounterService.GetByID(acceptedRequest.EncounterId)
+	service.EncounterRepo.MakeEncounterPublished(encouterToPublishDto.ID)
 	acceptedRequestDto := dto.ToDtoReq(*acceptedRequest)
 	return acceptedRequestDto, nil
 }

@@ -10,6 +10,7 @@ import (
 type EncounterService struct {
 	EncounterRepo           *repo.EncounterRepository
 	EncounterRequestService *EncounterRequestService
+	EncounterRequestRepo    *repo.EncounterRequestRepository
 }
 
 func (service *EncounterService) Create(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
@@ -86,9 +87,15 @@ func (service *EncounterService) CreateTouristEncounter(encounterDto dto.Encount
 
 		savedEncounterDto := dto.ToDto(savedEncounter)
 		encounterReqDto := dto.EncounterRequestDto{TouristId: userId, EncounterId: savedEncounterDto.ID, Status: "OnHold"}
-		service.EncounterRequestService.CreateEncounterRequest(encounterReqDto)
+		_, err = service.EncounterRequestRepo.Save(encounterReqDto.ToReqModel())
+		if err != nil {
+			return dto.EncounterDto{}, err
+		}
+		if err != nil {
+			return dto.EncounterDto{}, err
+		}
 		return savedEncounterDto, err
 	} else {
-		return encounterDto, fmt.Errorf("The tourist is not at level 10 or higher")
+		return encounterDto, fmt.Errorf("the tourist is not at level 10 or higher")
 	}
 }

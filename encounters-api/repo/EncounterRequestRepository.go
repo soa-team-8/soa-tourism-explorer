@@ -7,17 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type EncounterRequestDatabaseRepository struct {
+type EncounterRequestRepository struct {
 	db *gorm.DB
 }
 
-// NewEncounterRequestDatabaseRepository kreira novi EncounterRequestDatabaseRepository
-func NewEncounterRequestDatabaseRepository(db *gorm.DB) *EncounterRequestDatabaseRepository {
-	return &EncounterRequestDatabaseRepository{db: db}
-}
-
 // AcceptRequest prihvata zahtev za susret sa datim ID-om
-func (r *EncounterRequestDatabaseRepository) AcceptRequest(id int) (*model.EncounterRequest, error) {
+func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
 	err := r.db.First(requestToUpdate, id).Error
 	if err != nil {
@@ -37,7 +32,7 @@ func (r *EncounterRequestDatabaseRepository) AcceptRequest(id int) (*model.Encou
 }
 
 // RejectRequest odbija zahtev za susret sa datim ID-om
-func (r *EncounterRequestDatabaseRepository) RejectRequest(id int) (*model.EncounterRequest, error) {
+func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
 	err := r.db.First(requestToUpdate, id).Error
 	if err != nil {
@@ -56,7 +51,7 @@ func (r *EncounterRequestDatabaseRepository) RejectRequest(id int) (*model.Encou
 	return requestToUpdate, nil
 }
 
-func (r *EncounterRequestDatabaseRepository) Save(encounterReq model.EncounterRequest) (model.EncounterRequest, error) {
+func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (model.EncounterRequest, error) {
 	result := r.db.Create(&encounterReq)
 	if result.Error != nil {
 		return model.EncounterRequest{}, result.Error

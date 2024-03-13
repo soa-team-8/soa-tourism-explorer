@@ -4,7 +4,6 @@ import "encounters/model"
 
 // EncounterRequestDto predstavlja DTO (Data Transfer Object) za EncounterRequest
 type EncounterRequestDto struct {
-	ID          uint64 `json:"id" gorm:"primaryKey;autoIncrement"`
 	EncounterId uint64 `json:"encounterId"`
 	TouristId   uint64 `json:"touristId"`
 	Status      string `json:"status"`

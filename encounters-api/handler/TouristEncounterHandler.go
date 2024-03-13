@@ -13,7 +13,8 @@ import (
 
 type TouristEncounterHandler struct {
 	*utils.HttpUtils
-	EncounterService *service.EncounterService
+	EncounterService        *service.EncounterService
+	EncounterRequestService *service.EncounterRequestService
 }
 
 func (e *TouristEncounterHandler) Create(resp http.ResponseWriter, req *http.Request) {
@@ -148,4 +149,28 @@ func (e *TouristEncounterHandler) CreateTouristEncounter(resp http.ResponseWrite
 	}
 
 	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
+}
+
+func (e *TouristEncounterHandler) AcceptRequest(resp http.ResponseWriter, req *http.Request) {
+	idReq, err := e.GetIDFromRequest(req)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	acceptedReq, err := e.EncounterRequestService.AcceptEncounterRequest(int(idReq))
+
+	e.WriteJSONResponse(resp, http.StatusOK, acceptedReq)
+}
+
+func (e *TouristEncounterHandler) RejectRequest(resp http.ResponseWriter, req *http.Request) {
+	idReq, err := e.GetIDFromRequest(req)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	acceptedReq, err := e.EncounterRequestService.RejectEncounterRequest(int(idReq))
+
+	e.WriteJSONResponse(resp, http.StatusOK, acceptedReq)
 }
