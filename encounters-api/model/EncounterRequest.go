@@ -17,15 +17,6 @@ type EncounterRequest struct {
 	Status      RequestStatus `json:"status"`
 }
 
-// NewEncounterRequest kreira novi EncounterRequest
-func NewEncounterRequest(encounterId uint64, requestStatus RequestStatus, touristId uint64) *EncounterRequest {
-	return &EncounterRequest{
-		EncounterId: encounterId,
-		Status:      requestStatus,
-		TouristId:   touristId,
-	}
-}
-
 // AcceptRequest postavlja status zahteva na Accepted
 func (er *EncounterRequest) AcceptRequest() {
 	er.Status = Accepted

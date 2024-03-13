@@ -8,13 +8,13 @@ import (
 )
 
 type EncounterRequestRepository struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 // AcceptRequest prihvata zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
-	err := r.db.First(requestToUpdate, id).Error
+	err := r.Db.First(requestToUpdate, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("Not found %d", id)
@@ -23,7 +23,7 @@ func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequ
 	}
 
 	requestToUpdate.AcceptRequest()
-	err = r.db.Save(requestToUpdate).Error
+	err = r.Db.Save(requestToUpdate).Error
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequ
 // RejectRequest odbija zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
-	err := r.db.First(requestToUpdate, id).Error
+	err := r.Db.First(requestToUpdate, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("Not found %d", id)
@@ -43,7 +43,7 @@ func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequ
 	}
 
 	requestToUpdate.RejectRequest()
-	err = r.db.Save(requestToUpdate).Error
+	err = r.Db.Save(requestToUpdate).Error
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequ
 }
 
 func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (model.EncounterRequest, error) {
-	result := r.db.Create(&encounterReq)
+	result := r.Db.Create(&encounterReq)
 	if result.Error != nil {
 		return model.EncounterRequest{}, result.Error
 	}
@@ -61,7 +61,7 @@ func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (
 
 func (r *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error) {
 	var encounterRequests []model.EncounterRequest
-	if err := r.db.Find(&encounterRequests).Error; err != nil {
+	if err := r.Db.Find(&encounterRequests).Error; err != nil {
 		return nil, err
 	}
 	return encounterRequests, nil

@@ -9,7 +9,6 @@ import (
 // EncounterRequestService je servis za rad sa zahtevima za susrete
 type EncounterRequestService struct {
 	EncounterRequestRepo *repo.EncounterRequestRepository
-	EncounterService     *EncounterService
 	EncounterRepo        *repo.EncounterRepository
 }
 
@@ -46,8 +45,8 @@ func (service *EncounterRequestService) AcceptEncounterRequest(id int) (dto.Enco
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be accepted: %v", err)
 	}
-	encouterToPublishDto, err := service.EncounterService.GetByID(acceptedRequest.EncounterId)
-	service.EncounterRepo.MakeEncounterPublished(encouterToPublishDto.ID)
+	encouterToPublishDto, err := service.EncounterRepo.FindByID(acceptedRequest.EncounterId)
+	_, err = service.EncounterRepo.MakeEncounterPublished(encouterToPublishDto.ID)
 	acceptedRequestDto := dto.ToDtoReq(*acceptedRequest)
 	return acceptedRequestDto, nil
 }

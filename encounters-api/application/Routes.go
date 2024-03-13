@@ -23,6 +23,9 @@ func (a *App) loadRoutes() {
 	encountersRouter := router.PathPrefix("/encounters").Subrouter()
 	a.loadEncounterRoutes(encountersRouter)
 
+	encounterRequestRouter := router.PathPrefix("/requests").Subrouter()
+	a.loadEncounterRequestRoutes(encounterRequestRouter)
+
 	a.router = router
 }
 
@@ -31,13 +34,12 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 		EncounterRepo: &repo.EncounterRepository{
 			DB: a.db,
 		},
+		EncounterRequestRepo: &repo.EncounterRequestRepository{
+			Db: a.db,
+		},
 	}
 
 	encounterHandler := &handler.EncounterHandler{
-		EncounterService: encounterService,
-	}
-
-	touristEncounterHandler := &handler.TouristEncounterHandler{
 		EncounterService: encounterService,
 	}
 
@@ -46,16 +48,26 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
+	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", encounterHandler.CreateTouristEncounter).Methods("POST")
+}
 
-	router.HandleFunc("/tourist", touristEncounterHandler.Create).Methods("POST")
-	router.HandleFunc("/tourist", touristEncounterHandler.GetAll).Methods("GET")
-	router.HandleFunc("/tourist/{id}", touristEncounterHandler.GetByID).Methods("GET")
-	router.HandleFunc("/tourist/{id}", touristEncounterHandler.UpdateByID).Methods("PUT")
-	router.HandleFunc("/tourist/{id}", touristEncounterHandler.DeleteByID).Methods("DELETE")
-	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", touristEncounterHandler.CreateTouristEncounter).Methods("POST")
-	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.AcceptRequest).Methods("PUT")
-	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.RejectRequest).Methods("PUT")
-	router.HandleFunc("/tourist/requests/", touristEncounterHandler.GetAllRequests).Methods("GET")
+func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
+	encounterRequestService := &service.EncounterRequestService{
+		EncounterRequestRepo: &repo.EncounterRequestRepository{
+			Db: a.db,
+		},
+		EncounterRepo: &repo.EncounterRepository{
+			DB: a.db,
+		},
+	}
+
+	encounterRequestHandler := &handler.EncounterRequestHandler{
+		EncounterRequestService: encounterRequestService,
+	}
+
+	router.HandleFunc("/acceptReq/{id}", encounterRequestHandler.AcceptRequest).Methods("PUT")
+	router.HandleFunc("/rejectReq/{id}", encounterRequestHandler.RejectRequest).Methods("PUT")
+	router.HandleFunc("/getAll", encounterRequestHandler.GetAllRequests).Methods("GET")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {
