@@ -4,6 +4,7 @@ import "encounters/model"
 
 // EncounterRequestDto predstavlja DTO (Data Transfer Object) za EncounterRequest
 type EncounterRequestDto struct {
+	ID          uint64 `json:"id"`
 	EncounterId uint64 `json:"encounterId"`
 	TouristId   uint64 `json:"touristId"`
 	Status      string `json:"status"`
@@ -12,6 +13,7 @@ type EncounterRequestDto struct {
 func (e *EncounterRequestDto) ToReqModel() model.EncounterRequest {
 	status := mapStringToStatusReq(e.Status)
 	return model.EncounterRequest{
+		ID:          e.ID,
 		EncounterId: e.EncounterId,
 		TouristId:   e.TouristId,
 		Status:      status,
@@ -28,6 +30,7 @@ func ToDtoListReq(encounters []model.EncounterRequest) []EncounterRequestDto {
 
 func ToDtoReq(encounter model.EncounterRequest) EncounterRequestDto {
 	return EncounterRequestDto{
+		ID:          encounter.ID,
 		EncounterId: encounter.EncounterId,
 		TouristId:   encounter.TouristId,
 		Status:      mapStatusToStringReq(encounter.Status),

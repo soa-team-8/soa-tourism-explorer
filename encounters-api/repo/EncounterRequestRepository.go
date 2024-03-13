@@ -66,3 +66,33 @@ func (r *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error)
 	}
 	return encounterRequests, nil
 }
+
+// FindByID pronalazi zahtev za susret sa datim ID-om
+func (r *EncounterRequestRepository) FindByID(id int) (*model.EncounterRequest, error) {
+	var encounterRequest model.EncounterRequest
+	if err := r.Db.First(&encounterRequest, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("Not found %d", id)
+		}
+		return nil, err
+	}
+	return &encounterRequest, nil
+}
+
+// Update ažurira postojeći zahtev za susret
+func (r *EncounterRequestRepository) Update(encounterReq model.EncounterRequest) (*model.EncounterRequest, error) {
+	err := r.Db.Save(&encounterReq).Error
+	if err != nil {
+		return nil, err
+	}
+	return &encounterReq, nil
+}
+
+// DeleteByID briše zahtev za susret sa datim ID-om
+func (r *EncounterRequestRepository) DeleteByID(id int) error {
+	result := r.Db.Delete(&model.EncounterRequest{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}

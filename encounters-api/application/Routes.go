@@ -48,7 +48,7 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
-	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", encounterHandler.CreateTouristEncounter).Methods("POST")
+	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}", encounterHandler.CreateTouristEncounter).Methods("POST")
 }
 
 func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
@@ -65,6 +65,10 @@ func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
 		EncounterRequestService: encounterRequestService,
 	}
 
+	router.HandleFunc("/create", encounterRequestHandler.CreateRequest).Methods("POST")
+	router.HandleFunc("/get/{id}", encounterRequestHandler.GetRequestByID).Methods("GET")
+	router.HandleFunc("/update", encounterRequestHandler.UpdateRequest).Methods("PUT")
+	router.HandleFunc("/delete/{id}", encounterRequestHandler.DeleteRequest).Methods("DELETE")
 	router.HandleFunc("/acceptReq/{id}", encounterRequestHandler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/rejectReq/{id}", encounterRequestHandler.RejectRequest).Methods("PUT")
 	router.HandleFunc("/getAll", encounterRequestHandler.GetAllRequests).Methods("GET")
