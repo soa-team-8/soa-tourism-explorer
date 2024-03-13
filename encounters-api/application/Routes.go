@@ -2,7 +2,6 @@ package application
 
 import (
 	"encounters/handler"
-	"encounters/repo"
 	"encounters/service"
 
 	"fmt"
@@ -21,27 +20,34 @@ func (a *App) loadRoutes() {
 	}).Methods("GET")
 
 	encountersRouter := router.PathPrefix("/encounters").Subrouter()
+	executionsRouter := router.PathPrefix("/encounters/execution").Subrouter()
+
 	a.loadEncounterRoutes(encountersRouter)
+	a.loadExecutionRoutes(executionsRouter)
 
 	a.router = router
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterService := &service.EncounterService{
-		EncounterRepo: &repo.EncounterRepository{
-			DB: a.db,
-		},
-	}
-
-	encounterHandler := &handler.EncounterHandler{
-		EncounterService: encounterService,
-	}
+	encounterService := service.NewEncounterService(a.db)
+	encounterHandler := handler.NewEncounterHandler(encounterService)
 
 	router.HandleFunc("", encounterHandler.Create).Methods("POST")
-	router.HandleFunc("", encounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/get-all", encounterHandler.GetAll).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) loadExecutionRoutes(router *mux.Router) {
+	executionService := service.NewEncounterExecutionService(a.db)
+	executionHandler := handler.NewEncounterExecutionHandler(executionService)
+
+	router.HandleFunc("", executionHandler.Create).Methods("POST")
+	router.HandleFunc("/get-all", executionHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", executionHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}", executionHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{id}", executionHandler.DeleteByID).Methods("DELETE")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {
