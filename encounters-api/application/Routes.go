@@ -55,6 +55,7 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}/", touristEncounterHandler.CreateTouristEncounter).Methods("POST")
 	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/tourist/acceptReq/{id}", touristEncounterHandler.RejectRequest).Methods("PUT")
+	router.HandleFunc("/tourist/requests/", touristEncounterHandler.GetAllRequests).Methods("GET")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

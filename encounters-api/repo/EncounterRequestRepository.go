@@ -58,3 +58,11 @@ func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (
 	}
 	return encounterReq, nil
 }
+
+func (r *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error) {
+	var encounterRequests []model.EncounterRequest
+	if err := r.db.Find(&encounterRequests).Error; err != nil {
+		return nil, err
+	}
+	return encounterRequests, nil
+}

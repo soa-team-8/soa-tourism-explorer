@@ -30,6 +30,16 @@ func (service *EncounterRequestService) CreateEncounterRequest(encounterReqDto d
 	return newRequestDto, nil
 }
 
+func (service *EncounterRequestService) GetAll() ([]dto.EncounterRequestDto, error) {
+	encounterRequests, err := service.EncounterRequestRepo.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf(fmt.Sprintln("Encounters not found"))
+	}
+
+	encounterRequestsDtos := dto.ToDtoListReq(encounterRequests)
+	return encounterRequestsDtos, nil
+}
+
 // AcceptEncounterRequest prihvata zahtev za susret sa datim ID-om
 func (service *EncounterRequestService) AcceptEncounterRequest(id int) (dto.EncounterRequestDto, error) {
 	acceptedRequest, err := service.EncounterRequestRepo.AcceptRequest(id)

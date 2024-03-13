@@ -174,3 +174,13 @@ func (e *TouristEncounterHandler) RejectRequest(resp http.ResponseWriter, req *h
 
 	e.WriteJSONResponse(resp, http.StatusOK, acceptedReq)
 }
+
+func (e *TouristEncounterHandler) GetAllRequests(resp http.ResponseWriter, req *http.Request) {
+	encounterRequests, err := e.EncounterRequestService.GetAll()
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, encounterRequests)
+}
