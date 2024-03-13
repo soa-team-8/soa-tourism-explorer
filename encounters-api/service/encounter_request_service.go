@@ -4,6 +4,7 @@ import (
 	"encounters/dto"
 	"encounters/repo"
 	"fmt"
+	"gorm.io/gorm"
 )
 
 // EncounterRequestService je servis za rad sa zahtevima za susrete
@@ -12,11 +13,14 @@ type EncounterRequestService struct {
 	EncounterRepo        *repo.EncounterRepository
 }
 
-// NewEncounterRequestService kreira novi EncounterRequestService
-func NewEncounterRequestService(encounterRequestRepo *repo.EncounterRequestRepository, encounterRepo *repo.EncounterRepository) *EncounterRequestService {
+func NewEncounterRequestService(db *gorm.DB) *EncounterRequestService {
 	return &EncounterRequestService{
-		EncounterRequestRepo: encounterRequestRepo,
-		EncounterRepo:        encounterRepo,
+		EncounterRequestRepo: &repo.EncounterRequestRepository{
+			DB: db,
+		},
+		EncounterRepo: &repo.EncounterRepository{
+			DB: db,
+		},
 	}
 }
 

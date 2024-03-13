@@ -12,6 +12,12 @@ type EncounterRequestHandler struct {
 	EncounterRequestService *service.EncounterRequestService
 }
 
+func NewEncounterRequestHandler(executionRequestService *service.EncounterRequestService) *EncounterRequestHandler {
+	return &EncounterRequestHandler{
+		EncounterRequestService: executionRequestService,
+	}
+}
+
 func (e *EncounterRequestHandler) CreateRequest(resp http.ResponseWriter, req *http.Request) {
 	encounterReqDto, err := e.Decode(req.Body, &dto.EncounterDto{})
 	if err != nil {

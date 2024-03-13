@@ -8,13 +8,13 @@ import (
 )
 
 type EncounterRequestRepository struct {
-	Db *gorm.DB
+	DB *gorm.DB
 }
 
 // AcceptRequest prihvata zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
-	err := r.Db.First(requestToUpdate, id).Error
+	err := r.DB.First(requestToUpdate, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("Not found %d", id)
@@ -23,7 +23,7 @@ func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequ
 	}
 
 	requestToUpdate.AcceptRequest()
-	err = r.Db.Save(requestToUpdate).Error
+	err = r.DB.Save(requestToUpdate).Error
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequ
 // RejectRequest odbija zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequest, error) {
 	requestToUpdate := &model.EncounterRequest{}
-	err := r.Db.First(requestToUpdate, id).Error
+	err := r.DB.First(requestToUpdate, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("Not found %d", id)
@@ -43,7 +43,7 @@ func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequ
 	}
 
 	requestToUpdate.RejectRequest()
-	err = r.Db.Save(requestToUpdate).Error
+	err = r.DB.Save(requestToUpdate).Error
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequ
 }
 
 func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (model.EncounterRequest, error) {
-	result := r.Db.Create(&encounterReq)
+	result := r.DB.Create(&encounterReq)
 	if result.Error != nil {
 		return model.EncounterRequest{}, result.Error
 	}
@@ -61,7 +61,7 @@ func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (
 
 func (r *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error) {
 	var encounterRequests []model.EncounterRequest
-	if err := r.Db.Find(&encounterRequests).Error; err != nil {
+	if err := r.DB.Find(&encounterRequests).Error; err != nil {
 		return nil, err
 	}
 	return encounterRequests, nil
@@ -70,7 +70,7 @@ func (r *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error)
 // FindByID pronalazi zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) FindByID(id int) (*model.EncounterRequest, error) {
 	var encounterRequest model.EncounterRequest
-	if err := r.Db.First(&encounterRequest, id).Error; err != nil {
+	if err := r.DB.First(&encounterRequest, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("Not found %d", id)
 		}
@@ -81,7 +81,7 @@ func (r *EncounterRequestRepository) FindByID(id int) (*model.EncounterRequest, 
 
 // Update ažurira postojeći zahtev za susret
 func (r *EncounterRequestRepository) Update(encounterReq model.EncounterRequest) (*model.EncounterRequest, error) {
-	err := r.Db.Save(&encounterReq).Error
+	err := r.DB.Save(&encounterReq).Error
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (r *EncounterRequestRepository) Update(encounterReq model.EncounterRequest)
 
 // DeleteByID briše zahtev za susret sa datim ID-om
 func (r *EncounterRequestRepository) DeleteByID(id int) error {
-	result := r.Db.Delete(&model.EncounterRequest{}, id)
+	result := r.DB.Delete(&model.EncounterRequest{}, id)
 	if result.Error != nil {
 		return result.Error
 	}

@@ -32,18 +32,8 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterService := &service.EncounterService{
-		EncounterRepo: &repo.EncounterRepository{
-			DB: a.db,
-		},
-		EncounterRequestRepo: &repo.EncounterRequestRepository{
-			Db: a.db,
-		},
-	}
-
-	encounterHandler := &handler.EncounterHandler{
-		EncounterService: encounterService,
-	}
+	encounterService := service.NewEncounterService(a.db)
+	encounterHandler := handler.NewEncounterHandler(encounterService)
 
 	router.HandleFunc("", encounterHandler.Create).Methods("POST")
 	router.HandleFunc("/get-all", encounterHandler.GetAll).Methods("GET")
@@ -54,18 +44,8 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 }
 
 func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
-	encounterRequestService := &service.EncounterRequestService{
-		EncounterRequestRepo: &repo.EncounterRequestRepository{
-			Db: a.db,
-		},
-		EncounterRepo: &repo.EncounterRepository{
-			DB: a.db,
-		},
-	}
-
-	encounterRequestHandler := &handler.EncounterRequestHandler{
-		EncounterRequestService: encounterRequestService,
-	}
+	encounterRequestService := service.NewEncounterRequestService(a.db)
+	encounterRequestHandler := handler.NewEncounterRequestHandler(encounterRequestService)
 
 	router.HandleFunc("/create", encounterRequestHandler.CreateRequest).Methods("POST")
 	router.HandleFunc("/get/{id}", encounterRequestHandler.GetRequestByID).Methods("GET")

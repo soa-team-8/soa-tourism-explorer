@@ -19,6 +19,9 @@ func NewEncounterService(db *gorm.DB) *EncounterService {
 		EncounterRepo: &repo.EncounterRepository{
 			DB: db,
 		},
+		EncounterRequestRepo: &repo.EncounterRequestRepository{
+			DB: db,
+		},
 	}
 }
 
