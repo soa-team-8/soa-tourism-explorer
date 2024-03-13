@@ -28,3 +28,7 @@ type Encounter struct {
 	Latitude    float64         `json:"latitude"`
 	// List of changes
 }
+
+func (e *Encounter) MakeEncounterPublished() {
+	e.Status = Published
+}

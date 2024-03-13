@@ -25,6 +25,9 @@ func (a *App) loadRoutes() {
 	a.loadEncounterRoutes(encountersRouter)
 	a.loadExecutionRoutes(executionsRouter)
 
+	encounterRequestRouter := router.PathPrefix("/requests").Subrouter()
+	a.loadEncounterRequestRoutes(encounterRequestRouter)
+
 	a.router = router
 }
 
@@ -37,6 +40,20 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
+	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}", encounterHandler.CreateTouristEncounter).Methods("POST")
+}
+
+func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
+	encounterRequestService := service.NewEncounterRequestService(a.db)
+	encounterRequestHandler := handler.NewEncounterRequestHandler(encounterRequestService)
+
+	router.HandleFunc("/create", encounterRequestHandler.CreateRequest).Methods("POST")
+	router.HandleFunc("/get/{id}", encounterRequestHandler.GetRequestByID).Methods("GET")
+	router.HandleFunc("/update", encounterRequestHandler.UpdateRequest).Methods("PUT")
+	router.HandleFunc("/delete/{id}", encounterRequestHandler.DeleteRequest).Methods("DELETE")
+	router.HandleFunc("/acceptReq/{id}", encounterRequestHandler.AcceptRequest).Methods("PUT")
+	router.HandleFunc("/rejectReq/{id}", encounterRequestHandler.RejectRequest).Methods("PUT")
+	router.HandleFunc("/getAll", encounterRequestHandler.GetAllRequests).Methods("GET")
 }
 
 func (a *App) loadExecutionRoutes(router *mux.Router) {

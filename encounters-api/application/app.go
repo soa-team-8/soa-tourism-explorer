@@ -40,7 +40,9 @@ func New(config Config) *App {
 		return nil
 	}
 
+	err = db.AutoMigrate(&model.EncounterRequest{})
 	err = db.AutoMigrate(&model.EncounterExecution{})
+
 	if err != nil {
 		fmt.Println(err)
 		return nil

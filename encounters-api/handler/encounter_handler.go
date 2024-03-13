@@ -2,7 +2,9 @@ package handler
 
 import (
 	"encounters/dto"
+	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 
 	"errors"
 
@@ -106,4 +108,53 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 	}
 
 	e.WriteResponse(resp, http.StatusOK, "Encounter deleted successfully")
+}
+
+func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req *http.Request) {
+	// Dobijanje vrednosti iz putanje pomoću gorilla/mux
+	vars := mux.Vars(req)
+	checkpointIDStr := vars["checkpointId"]
+	isSecretPrerequisiteStr := vars["isSecretPrerequisite"]
+	levelStr := vars["level"]
+	userIDStr := vars["userId"]
+
+	// Pretvaranje stringova u odgovarajuće tipove
+	checkpointID, err := strconv.Atoi(checkpointIDStr)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	isSecretPrerequisite, err := strconv.ParseBool(isSecretPrerequisiteStr)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	level, err := strconv.Atoi(levelStr)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	// Ostatak koda ostaje nepromenjen
+	newEncounterDto, err := e.Decode(req.Body, &dto.EncounterDto{})
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	savedEncounterDto, err := e.EncounterService.CreateTouristEncounter(*newEncounterDto.(*dto.EncounterDto), checkpointID, isSecretPrerequisite, level, uint64(userID))
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
 }
