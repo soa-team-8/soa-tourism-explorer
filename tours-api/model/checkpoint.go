@@ -15,7 +15,7 @@ type CheckpointSecret struct {
 type Checkpoint struct {
 	ID                    uint64           `json:"id" gorm:"primaryKey;autoIncrement"`
 	TourID                uint64           `json:"tourId" gorm:"not null"`
-	AuthorID              uint64           `json:"AuthorId" gorm:"not null"`
+	AuthorID              uint64           `json:"authorId" gorm:"not null"`
 	Longitude             float64          `json:"longitude" gorm:"not null"`
 	Latitude              float64          `json:"latitude" gorm:"not null"`
 	Name                  string           `json:"name" gorm:"not null;check:name != ''"`

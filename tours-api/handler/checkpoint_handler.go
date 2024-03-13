@@ -54,6 +54,51 @@ func (e *CheckpointHandler) Create(resp http.ResponseWriter, req *http.Request) 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, createdCheckpoint)
 }
 
+func (e *CheckpointHandler) Update(resp http.ResponseWriter, req *http.Request) {
+	id, err := e.HttpUtils.GetIDFromRequest(req)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	err = req.ParseMultipartForm(10 << 20)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	images := req.MultipartForm.File["pictures"]
+	var uploadedImageNames []string
+	if len(images) > 0 {
+		imageService := service.NewImageService()
+		uploadedImageNames, err = imageService.UploadImages(images)
+		if err != nil {
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	var updatedCheckpoint model.Checkpoint
+	err = json.NewDecoder(strings.NewReader(req.FormValue("checkpoint"))).Decode(&updatedCheckpoint)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	if len(uploadedImageNames) > 0 {
+		updatedCheckpoint.Pictures = uploadedImageNames
+	}
+
+	updatedCheckpoint.ID = id
+
+	if err := e.CheckpointService.Update(updatedCheckpoint); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, updatedCheckpoint)
+}
+
 func (e *CheckpointHandler) Delete(resp http.ResponseWriter, req *http.Request) {
 	id, err := e.HttpUtils.GetIDFromRequest(req)
 	if err != nil {
@@ -71,29 +116,6 @@ func (e *CheckpointHandler) Delete(resp http.ResponseWriter, req *http.Request) 
 	}
 
 	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Checkpoint deleted successfully")
-}
-
-func (e *CheckpointHandler) Update(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.HttpUtils.GetIDFromRequest(req)
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
-		return
-	}
-
-	updatedCheckpoint, err := e.HttpUtils.Decode(req.Body, &model.Checkpoint{})
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
-		return
-	}
-
-	updatedCheckpoint.(*model.Checkpoint).ID = id
-
-	if err := e.CheckpointService.Update(*updatedCheckpoint.(*model.Checkpoint)); err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
-		return
-	}
-
-	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Checkpoint updated successfully")
 }
 
 func (e *CheckpointHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
