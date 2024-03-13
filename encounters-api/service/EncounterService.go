@@ -5,12 +5,21 @@ import (
 	"encounters/model"
 	"encounters/repo"
 	"fmt"
+	"gorm.io/gorm"
 )
 
 type EncounterService struct {
 	EncounterRepo           *repo.EncounterRepository
 	EncounterRequestService *EncounterRequestService
 	EncounterRequestRepo    *repo.EncounterRequestRepository
+}
+
+func NewEncounterService(db *gorm.DB) *EncounterService {
+	return &EncounterService{
+		EncounterRepo: &repo.EncounterRepository{
+			DB: db,
+		},
+	}
 }
 
 func (service *EncounterService) Create(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
@@ -23,7 +32,6 @@ func (service *EncounterService) Create(encounterDto dto.EncounterDto) (dto.Enco
 
 	savedEncounterDto := dto.ToDto(savedEncounter)
 
-	fmt.Println(savedEncounter.ID)
 	return savedEncounterDto, nil
 }
 
