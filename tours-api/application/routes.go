@@ -51,8 +51,8 @@ func (a *App) loadTourRoutes(router *mux.Router) {
 	router.HandleFunc("/{tourID}/{equipmentID}/add", tourHandler.AddEquipmentToTour).Methods("PUT")
 	router.HandleFunc("/{tourID}/{equipmentID}/remove", tourHandler.RemoveEquipmentFromTour).Methods("PUT")
 	router.HandleFunc("/{authorID}/by-author", tourHandler.GetToursByAuthor).Methods("GET")
-	router.HandleFunc("/publish/{id}", tourHandler.Publish).Methods("PUT")
-	router.HandleFunc("/archive/{id}", tourHandler.Archive).Methods("PUT")
+	router.HandleFunc("/{id}/publish", tourHandler.Publish).Methods("PUT")
+	router.HandleFunc("/{id}/archive", tourHandler.Archive).Methods("PUT")
 }
 
 func (a *App) loadEquipmentRoutes(router *mux.Router) {
@@ -72,7 +72,7 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", equipmentHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", equipmentHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", equipmentHandler.GetByID).Methods("GET")
-	router.HandleFunc("/get-available/{id}", equipmentHandler.GetAvailableEquipment).Methods("POST")
+	router.HandleFunc("/{id}/get-available", equipmentHandler.GetAvailableEquipment).Methods("POST")
 }
 
 func (a *App) loadCheckpointRoutes(router *mux.Router) {

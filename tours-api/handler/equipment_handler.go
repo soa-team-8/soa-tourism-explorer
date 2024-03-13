@@ -58,7 +58,10 @@ func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
-	resp.Write(jsonResponse)
+	_, err = resp.Write(jsonResponse)
+	if err != nil {
+		return
+	}
 }
 
 func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {

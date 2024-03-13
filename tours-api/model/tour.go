@@ -93,52 +93,6 @@ type ArchivedTour struct {
 	ArchivingDate time.Time `json:"archivingDate"`
 }
 
-type TransportationType int
-
-const (
-	Walking TransportationType = iota
-	Driving
-	Cycling
-)
-
-var transportationTypeStrings = [...]string{"Walking", "Driving", "Cycling"}
-
-func (d TransportationType) String() string {
-	if d < Walking || d > Cycling {
-		return "Unknown"
-	}
-	return transportationTypeStrings[d]
-}
-
-func (d *TransportationType) UnmarshalJSON(data []byte) error {
-	var levelStr string
-	if err := json.Unmarshal(data, &levelStr); err != nil {
-		return err
-	}
-	switch levelStr {
-	case "Walking":
-		*d = Walking
-	case "Driving":
-		*d = Driving
-	case "Cycling":
-		*d = Cycling
-	default:
-		return errors.New("invalid transportation type level")
-	}
-	return nil
-}
-
-func (d TransportationType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.String())
-}
-
-type TourTime struct {
-	ID             uint64             `json:"id" gorm:"primaryKey;autoIncrement"`
-	TimeInSeconds  uint64             `json:"timeInSeconds"`
-	Distance       uint64             `json:"distance"`
-	Transportation TransportationType `json:"transportation"`
-}
-
 type Tour struct {
 	ID                uint64            `json:"id" gorm:"primaryKey;autoIncrement"`
 	AuthorID          uint64            `json:"authorId" gorm:"not null"`
