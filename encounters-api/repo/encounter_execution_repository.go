@@ -22,7 +22,7 @@ func (r *EncounterExecutionRepository) Save(encounterExecution model.EncounterEx
 func (r *EncounterExecutionRepository) FindByID(id uint64) (*model.EncounterExecution, error) {
 	var encounterExecution model.EncounterExecution
 
-	if err := r.DB.First(&encounterExecution, id).Error; err != nil {
+	if err := r.DB.Preload("Encounter").First(&encounterExecution, id).Error; err != nil {
 		return nil, err
 	}
 

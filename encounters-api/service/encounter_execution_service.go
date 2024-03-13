@@ -26,7 +26,6 @@ func (service *EncounterExecutionService) Create(execution model.EncounterExecut
 		return model.EncounterExecution{}, fmt.Errorf("execution cannot be created: %v", err)
 	}
 
-	fmt.Println(savedExecution.ID)
 	return savedExecution, nil
 }
 
