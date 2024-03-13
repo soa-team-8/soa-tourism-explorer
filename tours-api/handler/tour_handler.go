@@ -182,3 +182,69 @@ func (e *TourHandler) GetToursByAuthor(resp http.ResponseWriter, req *http.Reque
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, tours)
 }
+
+func (e *TourHandler) Publish(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tourID, err := strconv.ParseUint(vars["id"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	tour, err := e.TourService.GetByID(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	if tour == nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("tour with ID %d not found", tourID), http.StatusNotFound)
+		return
+	}
+
+	if len(tour.Checkpoints) >= 2 {
+		tour.Status = 1
+
+		if err := e.TourService.Update(*tour); err != nil {
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+			return
+		}
+
+		e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, tour)
+	} else {
+		e.HttpUtils.HandleError(resp, errors.New("tour must have at least two checkpoints to be published"), http.StatusBadRequest)
+	}
+}
+
+func (e *TourHandler) Archive(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tourID, err := strconv.ParseUint(vars["id"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	tour, err := e.TourService.GetByID(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	if tour == nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("tour with ID %d not found", tourID), http.StatusNotFound)
+		return
+	}
+
+	if tour.Status == 1 {
+		tour.Status = 2
+
+		if err := e.TourService.Update(*tour); err != nil {
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+			return
+		}
+
+		e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, tour)
+	} else {
+		e.HttpUtils.HandleError(resp, errors.New("tour must be published to be archived"), http.StatusBadRequest)
+	}
+}

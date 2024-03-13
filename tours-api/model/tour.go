@@ -150,7 +150,6 @@ type Tour struct {
 	Tags              pq.StringArray    `json:"tags" gorm:"type:text[]"`
 	PublishedTours    []PublishedTour   `json:"publishedTours" gorm:"type:jsonb"`
 	ArchivedTours     []ArchivedTour    `json:"archivedTours" gorm:"type:jsonb"`
-	TourTimes         []TourTime        `json:"tourTimes" gorm:"type:jsonb"`
 	Closed            bool              `json:"closed"`
 	Equipment         []Equipment       `json:"equipment" gorm:"many2many:tour_equipments;"`
 	Checkpoints       []Checkpoint      `json:"checkpoints" gorm:"foreignKey:TourID"`
