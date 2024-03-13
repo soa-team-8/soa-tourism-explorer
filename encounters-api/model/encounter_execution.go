@@ -3,7 +3,7 @@ package model
 import "time"
 
 type EncounterExecution struct {
-	ID          uint64                   `json:"id" gorm:"primaryKey"`
+	ID          uint64                   `json:"id" gorm:"primaryKey;autoIncrement"`
 	EncounterID int64                    `json:"encounterId"`
 	Encounter   Encounter                `json:"encounter" gorm:"-"`
 	TouristID   int64                    `json:"touristId"`
