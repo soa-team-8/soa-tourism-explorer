@@ -24,6 +24,12 @@ func (a *App) loadRoutes() {
 	checkpointRouter := router.PathPrefix("/checkpoints").Subrouter()
 	a.loadCheckpointRoutes(checkpointRouter)
 
+	tourRatingRouter := router.PathPrefix("/tourRatings").Subrouter()
+	a.loadTourRatingRoutes(tourRatingRouter)
+
+	tourExecutionRouter := router.PathPrefix("/tourExecutions").Subrouter()
+	a.loadTourExecutionRoutes(tourExecutionRouter)
+  
 	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
 
 	a.router = router
@@ -93,6 +99,41 @@ func (a *App) loadCheckpointRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", checkpointHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}/tour", checkpointHandler.GetAllByTourID).Methods("GET")
 	router.HandleFunc("/{id}/checkpoint-secret", checkpointHandler.CreateOrUpdateCheckpointSecret).Methods("PUT")
+}
+
+func (a *App) loadTourRatingRoutes(router *mux.Router) {
+	tourRatingService := &service.TourRatingService{
+		TourRatingRepository: &repository.TourRatingRepository{
+			DB: a.db,
+		},
+	}
+
+	tourRatingHandler := &handler.TourRatingHandler{
+		TourRatingService: tourRatingService,
+	}
+
+	router.HandleFunc("", tourRatingHandler.Create).Methods("POST")
+	router.HandleFunc("", tourRatingHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", tourRatingHandler.Update).Methods("PUT")
+	router.HandleFunc("/{id}", tourRatingHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/{id}", tourRatingHandler.GetByID).Methods("GET")
+}
+
+func (a *App) loadTourExecutionRoutes(router *mux.Router) {
+	tourExecutionService := &service.TourExecutionService{
+		TourExecutionRepository: &repository.TourExecutionRepository{
+			DB: a.db,
+		},
+	}
+
+	tourExecutionHandler := &handler.TourExecutionHandler{
+		TourExecutionService: tourExecutionService,
+	}
+
+	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.CheckPosition).Methods("PUT")
+	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.Abandon).Methods("PUT")
+	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.Create).Methods("POST")
+	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.GetByIDs).Methods("GET")
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
