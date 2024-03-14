@@ -43,6 +43,18 @@ func New(config Config) *App {
 		return nil
 	}
 
+	err = db.AutoMigrate(&model.TourRating{})
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	err = db.AutoMigrate(&model.TourExecution{})
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
 	app := &App{
 		db:     db,
 		config: config,
