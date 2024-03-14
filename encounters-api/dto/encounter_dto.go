@@ -6,21 +6,21 @@ import (
 )
 
 type EncounterDto struct {
-	AuthorID          uint64          `json:"authorId"`
-	ID                uint64          `json:"id"`
-	Name              string          `json:"name"`
-	Description       string          `json:"description"`
-	XP                int             `json:"XP"`
-	Status            string          `json:"status"`
-	Type              string          `json:"type"`
-	Longitude         float64         `json:"longitude"`
-	Latitude          float64         `json:"latitude"`
-	LocationLongitude *float64        `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64        `json:"location_latitude,omitempty"`
-	Image             *pq.StringArray `json:"pictures" gorm:"type:text[]"`
-	Range             *float64        `json:"range,omitempty"`
-	RequiredPeople    *int            `json:"required_people,omitempty"`
-	ActiveTouristsIDs *[]uint64       `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`
+	AuthorID          uint64         `json:"authorId"`
+	ID                uint64         `json:"id"`
+	Name              string         `json:"name"`
+	Description       string         `json:"description"`
+	XP                int            `json:"XP"`
+	Status            string         `json:"status"`
+	Type              string         `json:"type"`
+	Longitude         float64        `json:"longitude"`
+	Latitude          float64        `json:"latitude"`
+	LocationLongitude *float64       `json:"location_longitude,omitempty"`
+	LocationLatitude  *float64       `json:"location_latitude,omitempty"`
+	Image             pq.StringArray `json:"pictures" gorm:"type:text[]"`
+	Range             *float64       `json:"range,omitempty"`
+	RequiredPeople    *int           `json:"required_people,omitempty"`
+	ActiveTouristsIDs *[]uint64      `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
@@ -163,6 +163,8 @@ func ToSocialDto(socialEncounter model.SocialEncounter) EncounterDto {
 	return dto
 }
 
+//-----------------------------------------Hidden location enc mapping-----------------------------------------------------
+
 func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
 	status := mapStringToStatus(e.Status)
 	encounterType := mapStringToType(e.Type)
@@ -182,7 +184,7 @@ func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
 		},
 		LocationLongitude: *e.LocationLongitude,
 		LocationLatitude:  *e.LocationLatitude,
-		Image:             pq.StringArray(*e.Image),
+		Image:             pq.StringArray(e.Image),
 	}
 }
 
@@ -192,7 +194,7 @@ func ToHiddenLocationDtoList(hiddenLocationEncounters []model.HiddenLocationEnco
 		encounterDtos[i] = ToDto(encounter.Encounter)
 		encounterDtos[i].LocationLongitude = &encounter.LocationLongitude
 		encounterDtos[i].LocationLatitude = &encounter.LocationLatitude
-		encounterDtos[i].Image = &encounter.Image
+		encounterDtos[i].Image = encounter.Image
 	}
 	return encounterDtos
 }
@@ -201,6 +203,6 @@ func ToHiddenLocationDto(hiddenLocationEncounter model.HiddenLocationEncounter) 
 	dto := ToDto(hiddenLocationEncounter.Encounter)
 	dto.LocationLongitude = &hiddenLocationEncounter.LocationLongitude
 	dto.LocationLatitude = &hiddenLocationEncounter.LocationLatitude
-	dto.Image = &hiddenLocationEncounter.Image
+	dto.Image = hiddenLocationEncounter.Image
 	return dto
 }
