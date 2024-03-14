@@ -12,6 +12,10 @@ type EncounterRepository struct {
 	DB *gorm.DB
 }
 
+func NewEncounterRepositoryRepository(db *gorm.DB) *EncounterRepository {
+	return &EncounterRepository{DB: db}
+}
+
 func (r *EncounterRepository) Save(encounter model.Encounter) (model.Encounter, error) {
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
