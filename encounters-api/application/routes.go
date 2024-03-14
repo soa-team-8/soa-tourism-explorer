@@ -31,6 +31,9 @@ func (a *App) loadRoutes() {
 	socialEncounterRouter := router.PathPrefix("/encounters/social").Subrouter()
 	a.loadSocialEncounterRoutes(socialEncounterRouter)
 
+	hiddenLocationEncounterRouter := router.PathPrefix("/encounters/hiddenLoc").Subrouter()
+	a.loadHiddenLocationEncounterRoutes(hiddenLocationEncounterRouter)
+
 	a.router = router
 }
 
@@ -79,6 +82,24 @@ func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", socialEncounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", socialEncounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", socialEncounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
+	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.db)
+	hiddenLocationEncounterHandler := handler.NewHiddenLocationEncounterHandler(hiddenLocationEncounterService)
+
+	router.HandleFunc("", hiddenLocationEncounterHandler.Create).Methods("POST")
+	router.HandleFunc("/get-all", hiddenLocationEncounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	imageName := vars["imageName"]
+
+	http.ServeFile(resp, req, "wwwroot/images/"+imageName)
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

@@ -1,23 +1,26 @@
 package dto
 
-import "encounters/model"
+import (
+	"encounters/model"
+	"github.com/lib/pq"
+)
 
 type EncounterDto struct {
-	AuthorID          uint64    `json:"authorId"`
-	ID                uint64    `json:"id"`
-	Name              string    `json:"name"`
-	Description       string    `json:"description"`
-	XP                int       `json:"XP"`
-	Status            string    `json:"status"`
-	Type              string    `json:"type"`
-	Longitude         float64   `json:"longitude"`
-	Latitude          float64   `json:"latitude"`
-	LocationLongitude *float64  `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64  `json:"location_latitude,omitempty"`
-	Image             *string   `json:"image,omitempty"`
-	Range             *float64  `json:"range,omitempty"`
-	RequiredPeople    *int      `json:"required_people,omitempty"`
-	ActiveTouristsIDs *[]uint64 `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`
+	AuthorID          uint64          `json:"authorId"`
+	ID                uint64          `json:"id"`
+	Name              string          `json:"name"`
+	Description       string          `json:"description"`
+	XP                int             `json:"XP"`
+	Status            string          `json:"status"`
+	Type              string          `json:"type"`
+	Longitude         float64         `json:"longitude"`
+	Latitude          float64         `json:"latitude"`
+	LocationLongitude *float64        `json:"location_longitude,omitempty"`
+	LocationLatitude  *float64        `json:"location_latitude,omitempty"`
+	Image             *pq.StringArray `json:"pictures" gorm:"type:text[]"`
+	Range             *float64        `json:"range,omitempty"`
+	RequiredPeople    *int            `json:"required_people,omitempty"`
+	ActiveTouristsIDs *[]uint64       `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
@@ -157,5 +160,47 @@ func ToSocialDto(socialEncounter model.SocialEncounter) EncounterDto {
 	dto.RequiredPeople = &socialEncounter.RequiredPeople
 	dto.Range = &socialEncounter.Range
 	dto.ActiveTouristsIDs = socialEncounter.ActiveTouristsIds
+	return dto
+}
+
+func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
+	status := mapStringToStatus(e.Status)
+	encounterType := mapStringToType(e.Type)
+
+	return model.HiddenLocationEncounter{
+		EncounterID: e.ID,
+		Encounter: model.Encounter{
+			ID:          e.ID,
+			AuthorID:    e.AuthorID,
+			Name:        e.Name,
+			Description: e.Description,
+			XP:          uint64(e.XP),
+			Status:      status,
+			Type:        encounterType,
+			Longitude:   e.Longitude,
+			Latitude:    e.Latitude,
+		},
+		LocationLongitude: *e.LocationLongitude,
+		LocationLatitude:  *e.LocationLatitude,
+		Image:             pq.StringArray(*e.Image),
+	}
+}
+
+func ToHiddenLocationDtoList(hiddenLocationEncounters []model.HiddenLocationEncounter) []EncounterDto {
+	encounterDtos := make([]EncounterDto, len(hiddenLocationEncounters))
+	for i, encounter := range hiddenLocationEncounters {
+		encounterDtos[i] = ToDto(encounter.Encounter)
+		encounterDtos[i].LocationLongitude = &encounter.LocationLongitude
+		encounterDtos[i].LocationLatitude = &encounter.LocationLatitude
+		encounterDtos[i].Image = &encounter.Image
+	}
+	return encounterDtos
+}
+
+func ToHiddenLocationDto(hiddenLocationEncounter model.HiddenLocationEncounter) EncounterDto {
+	dto := ToDto(hiddenLocationEncounter.Encounter)
+	dto.LocationLongitude = &hiddenLocationEncounter.LocationLongitude
+	dto.LocationLatitude = &hiddenLocationEncounter.LocationLatitude
+	dto.Image = &hiddenLocationEncounter.Image
 	return dto
 }
