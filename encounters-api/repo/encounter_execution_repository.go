@@ -31,7 +31,7 @@ func (r *EncounterExecutionRepository) FindByID(id uint64) (*model.EncounterExec
 
 func (r *EncounterExecutionRepository) FindAll() ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
-	if err := r.DB.Find(&encounterExecutions).Error; err != nil {
+	if err := r.DB.Preload("Encounter").Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
 	return encounterExecutions, nil
