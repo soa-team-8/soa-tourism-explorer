@@ -28,6 +28,9 @@ func (a *App) loadRoutes() {
 	encounterRequestRouter := router.PathPrefix("/requests").Subrouter()
 	a.loadEncounterRequestRoutes(encounterRequestRouter)
 
+	socialEncounterRouter := router.PathPrefix("/encounters/social").Subrouter()
+	a.loadSocialEncounterRoutes(socialEncounterRouter)
+
 	a.router = router
 }
 
@@ -65,6 +68,17 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", executionHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", executionHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", executionHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
+	socialEncounterService := service.NewSocialEncounterService(a.db)
+	socialEncounterHandler := handler.NewSocialEncounterHandler(socialEncounterService)
+
+	router.HandleFunc("", socialEncounterHandler.Create).Methods("POST")
+	router.HandleFunc("/get-all", socialEncounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", socialEncounterHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}", socialEncounterHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{id}", socialEncounterHandler.DeleteByID).Methods("DELETE")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

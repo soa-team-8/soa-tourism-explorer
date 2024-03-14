@@ -2,7 +2,6 @@ package service
 
 import (
 	"encounters/dto"
-	"encounters/model"
 	"encounters/repo"
 	"fmt"
 	"gorm.io/gorm"
@@ -12,6 +11,7 @@ type EncounterService struct {
 	EncounterRepo           *repo.EncounterRepository
 	EncounterRequestService *EncounterRequestService
 	EncounterRequestRepo    *repo.EncounterRequestRepository
+	SocialEncounterRepo     *repo.SocialEncounterRepository
 }
 
 func NewEncounterService(db *gorm.DB) *EncounterService {
@@ -21,6 +21,9 @@ func NewEncounterService(db *gorm.DB) *EncounterService {
 		},
 		EncounterRequestRepo: &repo.EncounterRequestRepository{
 			DB: db,
+		},
+		SocialEncounterRepo: &repo.SocialEncounterRepository{
+			Db: db,
 		},
 	}
 }
@@ -80,32 +83,33 @@ func (service *EncounterService) Update(encounterDto dto.EncounterDto) (dto.Enco
 }
 
 func (service *EncounterService) CreateTouristEncounter(encounterDto dto.EncounterDto, checkpointId int, isSecretPrerequisite bool, level int, userId uint64) (dto.EncounterDto, error) {
-	var encounter model.Encounter
+	var savedEncId uint64
 	if level >= 10 {
 		// logika za slučaj kada je level >= 10
 		if encounterDto.Type == "Location" {
 
 		} else if encounterDto.Type == "Social" {
-
+			var socialEncounter = encounterDto.ToSocialModel()
+			savedEncounter, err := service.SocialEncounterRepo.Save(socialEncounter)
+			savedEncId = savedEncounter.EncounterID
+			if err != nil {
+				return dto.EncounterDto{}, fmt.Errorf("social encounter cannot be created: %v", err)
+			}
 		} else {
-			encounter = encounterDto.ToModel()
+			var encounter = encounterDto.ToModel()
+			savedEncounter, err := service.EncounterRepo.Save(encounter)
+			savedEncId = savedEncounter.ID
+			if err != nil {
+				return dto.EncounterDto{}, fmt.Errorf("encounter cannot be created: %v", err)
+			}
 		}
 
-		savedEncounter, err := service.EncounterRepo.Save(encounter)
-		if err != nil {
-			return dto.EncounterDto{}, fmt.Errorf("encounter cannot be created: %v", err)
-		}
-
-		savedEncounterDto := dto.ToDto(savedEncounter)
-		encounterReqDto := dto.EncounterRequestDto{TouristId: userId, EncounterId: savedEncounterDto.ID, Status: "OnHold"}
-		_, err = service.EncounterRequestRepo.Save(encounterReqDto.ToReqModel())
+		encounterReqDto := dto.EncounterRequestDto{TouristId: userId, EncounterId: savedEncId, Status: "OnHold"}
+		_, err := service.EncounterRequestRepo.Save(encounterReqDto.ToReqModel())
 		if err != nil {
 			return dto.EncounterDto{}, err
 		}
-		if err != nil {
-			return dto.EncounterDto{}, err
-		}
-		return savedEncounterDto, err
+		return encounterDto, err
 	} else {
 		return encounterDto, fmt.Errorf("the tourist is not at level 10 or higher")
 	}
