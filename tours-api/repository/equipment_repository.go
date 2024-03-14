@@ -77,3 +77,11 @@ func (repo *EquipmentRepository) FindByID(id uint64) (*model.Equipment, error) {
 	}
 	return &equipment, nil
 }
+
+func (repo *EquipmentRepository) FindByTourID(tourID int) ([]model.Equipment, error) {
+	var tour model.Tour
+	if err := repo.DB.Preload("Equipment").First(&tour, tourID).Error; err != nil {
+		return nil, err
+	}
+	return tour.Equipment, nil
+}

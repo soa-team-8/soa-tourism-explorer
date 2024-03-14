@@ -29,6 +29,8 @@ func (a *App) loadRoutes() {
 
 	tourExecutionRouter := router.PathPrefix("/tourExecutions").Subrouter()
 	a.loadTourExecutionRoutes(tourExecutionRouter)
+  
+	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
 
 	a.router = router
 }
@@ -36,6 +38,9 @@ func (a *App) loadRoutes() {
 func (a *App) loadTourRoutes(router *mux.Router) {
 	tourService := &service.TourService{
 		TourRepository: &repository.TourRepository{
+			DB: a.db,
+		},
+		EquipmentRepository: &repository.EquipmentRepository{
 			DB: a.db,
 		},
 	}
@@ -49,6 +54,11 @@ func (a *App) loadTourRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", tourHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", tourHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", tourHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{tourID}/{equipmentID}/add", tourHandler.AddEquipmentToTour).Methods("PUT")
+	router.HandleFunc("/{tourID}/{equipmentID}/remove", tourHandler.RemoveEquipmentFromTour).Methods("PUT")
+	router.HandleFunc("/{authorID}/by-author", tourHandler.GetToursByAuthor).Methods("GET")
+	router.HandleFunc("/{id}/publish", tourHandler.Publish).Methods("PUT")
+	router.HandleFunc("/{id}/archive", tourHandler.Archive).Methods("PUT")
 }
 
 func (a *App) loadEquipmentRoutes(router *mux.Router) {
@@ -68,6 +78,7 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", equipmentHandler.Update).Methods("PUT")
 	router.HandleFunc("/{id}", equipmentHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", equipmentHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}/get-available", equipmentHandler.GetAvailableEquipment).Methods("POST")
 }
 
 func (a *App) loadCheckpointRoutes(router *mux.Router) {
@@ -123,6 +134,13 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.Abandon).Methods("PUT")
 	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.Create).Methods("POST")
 	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.GetByIDs).Methods("GET")
+}
+
+func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	imageName := vars["imageName"]
+
+	http.ServeFile(resp, req, "wwwroot/images/"+imageName)
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

@@ -7,7 +7,8 @@ import (
 )
 
 type TourService struct {
-	TourRepository *repository.TourRepository
+	TourRepository      *repository.TourRepository
+	EquipmentRepository *repository.EquipmentRepository
 }
 
 func (service *TourService) Create(tour model.Tour) (uint64, error) {
@@ -46,4 +47,30 @@ func (service *TourService) GetByID(id uint64) (*model.Tour, error) {
 		return nil, fmt.Errorf("failed to get tour with ID %d: %w", id, err)
 	}
 	return tour, nil
+}
+
+func (service *TourService) AddEquipmentToTour(tourID, equipmentID uint64) error {
+	err := service.TourRepository.AddEquipmentToTour(tourID, equipmentID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *TourService) RemoveEquipmentFromTour(tourID, equipmentID uint64) error {
+	err := service.TourRepository.RemoveEquipmentFromTour(tourID, equipmentID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *TourService) GetToursByAuthor(authorID uint64) ([]model.Tour, error) {
+	tours, err := service.TourRepository.FindByAuthorID(authorID)
+	if err != nil {
+		return nil, err
+	}
+	return tours, nil
 }

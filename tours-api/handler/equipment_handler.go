@@ -58,7 +58,10 @@ func (e *EquipmentHandler) Delete(resp http.ResponseWriter, req *http.Request) {
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(http.StatusOK)
-	resp.Write(jsonResponse)
+	_, err = resp.Write(jsonResponse)
+	if err != nil {
+		return
+	}
 }
 
 func (e *EquipmentHandler) Update(resp http.ResponseWriter, req *http.Request) {
@@ -135,4 +138,26 @@ func (e *EquipmentHandler) GetAllPaged(resp http.ResponseWriter, req *http.Reque
 	}
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, equipment)
+}
+
+func (e *EquipmentHandler) GetAvailableEquipment(resp http.ResponseWriter, req *http.Request) {
+	tourID, err := e.HttpUtils.GetIDFromRequest(req)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	var currentEquipmentIDs []int64
+	if err := json.NewDecoder(req.Body).Decode(&currentEquipmentIDs); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	result, err := e.EquipmentService.GetAvailableEquipment(currentEquipmentIDs, int(tourID))
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, result)
 }
