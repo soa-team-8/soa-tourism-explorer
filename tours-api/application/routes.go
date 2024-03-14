@@ -29,7 +29,7 @@ func (a *App) loadRoutes() {
 
 	tourExecutionRouter := router.PathPrefix("/tourExecutions").Subrouter()
 	a.loadTourExecutionRoutes(tourExecutionRouter)
-  
+
 	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
 
 	a.router = router
@@ -130,7 +130,7 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 		TourExecutionService: tourExecutionService,
 	}
 
-	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.CheckPosition).Methods("PUT")
+	router.HandleFunc("/{id}", tourExecutionHandler.CheckPosition).Methods("PUT")
 	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.Abandon).Methods("PUT")
 	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.Create).Methods("POST")
 	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.GetByIDs).Methods("GET")

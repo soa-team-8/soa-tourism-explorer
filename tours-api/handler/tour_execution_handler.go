@@ -16,7 +16,23 @@ type TourExecutionHandler struct {
 }
 
 func (e *TourExecutionHandler) CheckPosition(resp http.ResponseWriter, req *http.Request) {
-	
+	touristPosition, err := e.HttpUtils.Decode(req.Body, &model.TouristPosition{})
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+	id, err := e.HttpUtils.GetIDFromRequest(req)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	if tourExecution, err := e.TourExecutionService.CheckPosition(*touristPosition.(*model.TouristPosition), int(id)); err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	} else {
+		e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tourExecution)
+	}
 }
 
 func (e *TourExecutionHandler) Abandon(resp http.ResponseWriter, req *http.Request) {
@@ -35,13 +51,12 @@ func (e *TourExecutionHandler) Abandon(resp http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	var tourExecution model.TourExecution
-	if _, err := e.TourExecutionService.Abandon(uid, eid); err != nil {
+	if tourExecution, err := e.TourExecutionService.Abandon(uid, eid); err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
+	} else {
+		e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tourExecution)
 	}
-
-	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tourExecution) //nema nista te
 }
 
 func (e *TourExecutionHandler) Create(resp http.ResponseWriter, req *http.Request) {
@@ -60,13 +75,12 @@ func (e *TourExecutionHandler) Create(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	var tourExecution model.TourExecution
-	if _, err := e.TourExecutionService.Create(uid, tid); err != nil {
+	if tourExecution, err := e.TourExecutionService.Create(uid, tid); err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
+	} else {
+		e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tourExecution)
 	}
-
-	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, tourExecution) //nema nista te
 }
 
 func (e *TourExecutionHandler) GetByIDs(resp http.ResponseWriter, req *http.Request) {

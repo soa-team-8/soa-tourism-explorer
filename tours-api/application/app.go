@@ -55,6 +55,12 @@ func New(config Config) *App {
 		return nil
 	}
 
+	err = db.AutoMigrate(&model.CheckpointCompletion{})
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
 	app := &App{
 		db:     db,
 		config: config,
