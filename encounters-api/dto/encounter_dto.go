@@ -15,12 +15,12 @@ type EncounterDto struct {
 	Type              string         `json:"type"`
 	Longitude         float64        `json:"longitude"`
 	Latitude          float64        `json:"latitude"`
-	LocationLongitude *float64       `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64       `json:"location_latitude,omitempty"`
+	LocationLongitude *float64       `json:"locationLongitude,omitempty"`
+	LocationLatitude  *float64       `json:"locationLatitude,omitempty"`
 	Image             pq.StringArray `json:"pictures" gorm:"type:text[]"`
 	Range             *float64       `json:"range,omitempty"`
-	RequiredPeople    *int           `json:"required_people,omitempty"`
-	ActiveTouristsIDs *[]uint64      `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`
+	RequiredPeople    *int           `json:"requiredPeople,omitempty"`
+	ActiveTouristsIDs *[]uint64      `json:"activeTouristsIds,omitempty" gorm:"type:bigint[]"`
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
