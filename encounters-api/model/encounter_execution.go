@@ -8,9 +8,9 @@ import (
 
 type EncounterExecution struct {
 	ID          uint64                   `json:"id" gorm:"primaryKey;autoIncrement"`
-	EncounterID int64                    `json:"encounterId" gorm:"not null"`
+	EncounterID uint64                   `json:"encounterId" gorm:"not null"`
 	Encounter   Encounter                `json:"encounter" gorm:"foreignKey:EncounterID"`
-	TouristID   int64                    `json:"touristId" gorm:"not null"`
+	TouristID   uint64                   `json:"touristId" gorm:"not null"`
 	Status      EncounterExecutionStatus `json:"status" gorm:"not null"`
 	StartTime   time.Time                `json:"startTime" json:"-" gorm:"not null"`
 	EndTime     time.Time                `json:"endTime" json:"-" gorm:"not null"`

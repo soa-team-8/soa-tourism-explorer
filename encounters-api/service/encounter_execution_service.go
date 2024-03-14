@@ -17,7 +17,11 @@ func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	}
 }
 
-func (service *EncounterExecutionService) Create(execution model.EncounterExecution) (model.EncounterExecution, error) {
+func (service *EncounterExecutionService) Create(execution model.EncounterExecution, touristID uint64) (model.EncounterExecution, error) {
+	if execution.TouristID != touristID {
+		return model.EncounterExecution{}, fmt.Errorf("encounter touristID does not match provided touristID")
+	}
+
 	savedExecution, err := service.ExecutionRepo.Save(execution)
 
 	if err != nil {
@@ -45,19 +49,43 @@ func (service *EncounterExecutionService) GetAll() ([]model.EncounterExecution, 
 	return executions, nil
 }
 
-func (service *EncounterExecutionService) DeleteByID(id uint64) error {
+func (service *EncounterExecutionService) DeleteByID(id uint64, touristID uint64) error {
+	// Check permission
+	if err := service.checkPermission(id, touristID); err != nil {
+		return err
+	}
+
+	// Delete the execution
 	err := service.ExecutionRepo.DeleteByID(id)
 	if err != nil {
 		return fmt.Errorf("execution cannot be deleted: %v", err)
 	}
+
 	return nil
 }
 
-func (service *EncounterExecutionService) Update(execution model.EncounterExecution) (model.EncounterExecution, error) {
+func (service *EncounterExecutionService) Update(execution model.EncounterExecution, touristID uint64) (model.EncounterExecution, error) {
+	if err := service.checkPermission(execution.ID, touristID); err != nil {
+		return model.EncounterExecution{}, err
+	}
+
 	updatedExecution, err := service.ExecutionRepo.Update(execution)
 	if err != nil {
 		return model.EncounterExecution{}, fmt.Errorf("execution cannot be updated: %v", err)
 	}
 
 	return updatedExecution, nil
+}
+
+func (service *EncounterExecutionService) checkPermission(id uint64, touristID uint64) error {
+	execution, err := service.ExecutionRepo.FindByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to find execution: %v", err)
+	}
+
+	if execution.TouristID != touristID {
+		return fmt.Errorf("tourist does not have permission")
+	}
+
+	return nil
 }

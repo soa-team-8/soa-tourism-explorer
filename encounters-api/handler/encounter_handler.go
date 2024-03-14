@@ -52,7 +52,7 @@ func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -68,7 +68,7 @@ func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) 
 }
 
 func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -92,7 +92,7 @@ func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Reques
 }
 
 func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req)
+	id, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return

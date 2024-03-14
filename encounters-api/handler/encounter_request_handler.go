@@ -35,7 +35,7 @@ func (e *EncounterRequestHandler) CreateRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) GetRequestByID(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req)
+	idReq, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -67,7 +67,7 @@ func (e *EncounterRequestHandler) UpdateRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) DeleteRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req)
+	idReq, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -83,7 +83,7 @@ func (e *EncounterRequestHandler) DeleteRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) AcceptRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req)
+	idReq, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -99,7 +99,7 @@ func (e *EncounterRequestHandler) AcceptRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) RejectRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req)
+	idReq, err := e.GetIDFromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return

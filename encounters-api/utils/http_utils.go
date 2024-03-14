@@ -17,10 +17,10 @@ func (e *HttpUtils) Decode(body io.Reader, v interface{}) (interface{}, error) {
 	return v, err
 }
 
-func (e *HttpUtils) GetIDFromRequest(req *http.Request) (uint64, error) {
+func (e *HttpUtils) GetIDFromRequest(req *http.Request, paramName string) (uint64, error) {
 	vars := mux.Vars(req)
-	idStr := vars["id"]
-	return strconv.ParseUint(idStr, 10, 64)
+	paramValueStr := vars[paramName]
+	return strconv.ParseUint(paramValueStr, 10, 64)
 }
 
 func (e *HttpUtils) HandleError(resp http.ResponseWriter, err error, statusCode int) {

@@ -60,11 +60,11 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	executionService := service.NewEncounterExecutionService(a.db)
 	executionHandler := handler.NewEncounterExecutionHandler(executionService)
 
-	router.HandleFunc("", executionHandler.Create).Methods("POST")
+	router.HandleFunc("/{touristId}", executionHandler.Create).Methods("POST")
 	router.HandleFunc("/get-all", executionHandler.GetAll).Methods("GET")
 	router.HandleFunc("/{id}", executionHandler.GetByID).Methods("GET")
-	router.HandleFunc("/{id}", executionHandler.UpdateByID).Methods("PUT")
-	router.HandleFunc("/{id}", executionHandler.DeleteByID).Methods("DELETE")
+	router.HandleFunc("/{touristId}/{id}", executionHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{touristId}/{id}", executionHandler.DeleteByID).Methods("DELETE")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {
