@@ -65,7 +65,7 @@ func (r *EncounterExecutionRepository) Update(encounterExecution model.Encounter
 }
 
 // New methods with complex queries
-func (r *EncounterExecutionRepository) GetAllByTourist(touristID uint64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllByTourist(touristID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch EncounterExecutions with associated Encounter and matching TouristID
@@ -76,7 +76,7 @@ func (r *EncounterExecutionRepository) GetAllByTourist(touristID uint64) ([]mode
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetAllActiveByTourist(touristID int64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllActiveByTourist(touristID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch active EncounterExecutions with associated Encounter and matching TouristID
@@ -89,28 +89,32 @@ func (r *EncounterExecutionRepository) GetAllActiveByTourist(touristID int64) ([
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetAllCompletedByTourist(touristID uint64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllCompletedByTourist(touristID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch completed EncounterExecutions with associated Encounter and matching TouristID
-	if err := r.DB.Preload("Encounter").Where("tourist_id = ? AND status = ?", touristID, model.Completed).Find(&encounterExecutions).Error; err != nil {
+	if err := r.DB.Preload("Encounter").
+		Where("tourist_id = ? AND status = ?", touristID, model.Completed).
+		Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
 
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetByEncounter(encounterID int64) (*model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindByEncounter(encounterID uint64) (*model.EncounterExecution, error) {
 	var encounterExecution model.EncounterExecution
 
 	// Query to fetch EncounterExecution with associated Encounter matching the provided encounterID
-	if err := r.DB.Preload("Encounter").Where("encounter_id = ?", encounterID).First(&encounterExecution).Error; err != nil {
+	if err := r.DB.Preload("Encounter").
+		Where("encounter_id = ?", encounterID).
+		First(&encounterExecution).Error; err != nil {
 		return nil, err
 	}
 
 	return &encounterExecution, nil
 }
-func (r *EncounterExecutionRepository) GetAllByEncounter(encounterID int64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllByEncounter(encounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch EncounterExecutions with associated Encounter ID
@@ -123,7 +127,7 @@ func (r *EncounterExecutionRepository) GetAllByEncounter(encounterID int64) ([]m
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetAllBySocialEncounter(socialEncounterID int64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllBySocialEncounter(socialEncounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch EncounterExecutions with associated Encounter and matching social Encounter ID and type
@@ -136,7 +140,7 @@ func (r *EncounterExecutionRepository) GetAllBySocialEncounter(socialEncounterID
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetAllByLocationEncounter(locationEncounterID int64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllByLocationEncounter(locationEncounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	// Query to fetch EncounterExecutions with associated Encounter and matching location Encounter ID and type
@@ -149,7 +153,7 @@ func (r *EncounterExecutionRepository) GetAllByLocationEncounter(locationEncount
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) GetByEncounterAndTourist(touristID, encounterID int64) (*model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, touristID uint64) (*model.EncounterExecution, error) {
 	var encounterExecution model.EncounterExecution
 
 	// Query to fetch EncounterExecution with associated Encounter and matching TouristID and EncounterID
