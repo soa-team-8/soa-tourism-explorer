@@ -3,17 +3,21 @@ package service
 import (
 	"encounters/model"
 	"encounters/repo"
+	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	"math"
 )
 
 type EncounterExecutionService struct {
 	ExecutionRepo *repo.EncounterExecutionRepository
+	EncounterRepo *repo.EncounterRepository
 }
 
 func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	return &EncounterExecutionService{
 		ExecutionRepo: repo.NewEncounterExecutionRepository(db),
+		EncounterRepo: repo.NewEncounterRepositoryRepository(db),
 	}
 }
 
@@ -158,8 +162,8 @@ func (service *EncounterExecutionService) UpdateRange(encounters []model.Encount
 	return updatedExecutions, nil
 }
 
-func (service *EncounterExecutionService) checkPermission(id uint64, touristID uint64) error {
-	execution, err := service.ExecutionRepo.FindByID(id)
+func (service *EncounterExecutionService) checkPermission(ID uint64, touristID uint64) error {
+	execution, err := service.ExecutionRepo.FindByID(ID)
 	if err != nil {
 		return fmt.Errorf("failed to find execution: %v", err)
 	}
@@ -169,4 +173,77 @@ func (service *EncounterExecutionService) checkPermission(id uint64, touristID u
 	}
 
 	return nil
+}
+
+// Activate encounter
+func (service *EncounterExecutionService) Activate(encounterID, touristID uint64, touristLongitude, touristLatitude float64) (model.EncounterExecution, error) {
+	execution, err := service.ExecutionRepo.FindByEncounterAndTourist(encounterID, touristID)
+	if err != nil {
+		return model.EncounterExecution{}, fmt.Errorf("execution not found")
+	}
+
+	isExecutionCompleted := execution.Status == model.Completed
+	if isExecutionCompleted {
+		return model.EncounterExecution{}, fmt.Errorf("execution is already completed")
+	}
+
+	isTouristInRange := service.isTouristInRange(*execution, touristLongitude, touristLatitude)
+
+	if !isTouristInRange {
+		return model.EncounterExecution{}, fmt.Errorf("tourist not in range")
+	}
+
+	model.EncounterExecution.Activate(*execution)
+
+	updatedExecution, err := service.ExecutionRepo.Update(*execution)
+	if err != nil {
+		return model.EncounterExecution{}, fmt.Errorf("execution cannot be updated: %v", err)
+	}
+
+	return updatedExecution, nil
+}
+
+func (service *EncounterExecutionService) GetVisibleByTour(tourID, touristId uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (model.EncounterExecution, error) {
+	// TO-DO get encounterIDs from checkpoints from front
+	encounters, err := service.EncounterRepo.FindByIds(encounterIDs)
+	if err != nil {
+		return model.EncounterExecution{}, fmt.Errorf("encounters not found")
+	}
+
+	var closestEncounter *model.Encounter
+	closestDistance := math.Inf(1) // Positive infinity
+
+	for _, encounter := range encounters {
+		if model.IsCloseEnough(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude) {
+			distance := model.CalculateDistance(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
+			if distance < closestDistance {
+				closestEncounter = &encounter
+				closestDistance = distance
+			}
+		}
+	}
+
+	if closestEncounter == nil {
+		return model.EncounterExecution{}, errors.New("no close encounter found")
+	}
+	return model.EncounterExecution{}, nil
+}
+
+func (service *EncounterExecutionService) isTouristInRange(execution model.EncounterExecution, touristLongitude, touristLatitude float64) bool {
+	const thresholdDistance = 300
+	distance := model.CalculateDistance(execution.Encounter.Longitude, execution.Encounter.Latitude, touristLongitude, touristLatitude)
+
+	if execution.Encounter.Type == model.Misc && distance < thresholdDistance {
+		return true
+	}
+	// TODO Check for social
+	if execution.Encounter.Type == model.Social {
+		return true
+	}
+	// TODO Check for location
+	if execution.Encounter.Type == model.Location {
+		return true
+	}
+
+	return false
 }
