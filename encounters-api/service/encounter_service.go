@@ -12,6 +12,7 @@ type EncounterService struct {
 	EncounterRequestService *EncounterRequestService
 	EncounterRequestRepo    *repo.EncounterRequestRepository
 	SocialEncounterRepo     *repo.SocialEncounterRepository
+	HiddenEncounterRepo     *repo.HiddenLocationRepository
 }
 
 func NewEncounterService(db *gorm.DB) *EncounterService {
@@ -23,6 +24,9 @@ func NewEncounterService(db *gorm.DB) *EncounterService {
 			DB: db,
 		},
 		SocialEncounterRepo: &repo.SocialEncounterRepository{
+			Db: db,
+		},
+		HiddenEncounterRepo: &repo.HiddenLocationRepository{
 			Db: db,
 		},
 	}
@@ -87,7 +91,12 @@ func (service *EncounterService) CreateTouristEncounter(encounterDto dto.Encount
 	if level >= 10 {
 		// logika za slučaj kada je level >= 10
 		if encounterDto.Type == "Location" {
-
+			var hiddenLocationEnconter = encounterDto.ToHiddenLocationModel()
+			savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEnconter)
+			savedEncId = savedEncounter.EncounterID
+			if err != nil {
+				return dto.EncounterDto{}, fmt.Errorf("hidden location encounter cannot be created: %v", err)
+			}
 		} else if encounterDto.Type == "Social" {
 			var socialEncounter = encounterDto.ToSocialModel()
 			savedEncounter, err := service.SocialEncounterRepo.Save(socialEncounter)
