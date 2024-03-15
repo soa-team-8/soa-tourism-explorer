@@ -23,6 +23,11 @@ func (e *HttpUtils) GetIDFromRequest(req *http.Request, paramName string) (uint6
 	return strconv.ParseUint(paramValueStr, 10, 64)
 }
 
+func (e *HttpUtils) GetDoubleFromForm(req *http.Request, paramName string) (float64, error) {
+	paramValueStr := req.FormValue(paramName)
+	return strconv.ParseFloat(paramValueStr, 64)
+}
+
 func (e *HttpUtils) HandleError(resp http.ResponseWriter, err error, statusCode int) {
 	http.Error(resp, fmt.Sprintf("Error: %v", err), statusCode)
 }

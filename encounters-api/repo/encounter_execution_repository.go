@@ -130,9 +130,11 @@ func (r *EncounterExecutionRepository) FindAllByEncounter(encounterID uint64) ([
 func (r *EncounterExecutionRepository) FindAllBySocialEncounter(socialEncounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
-	// Query to fetch EncounterExecutions with associated Encounter and matching social Encounter ID and type
-	if err := r.DB.Preload("Encounter").
-		Where("encounter_id = ? AND encounter.type = ?", socialEncounterID, model.Social).
+	if err := r.DB.
+		Table("encounter_executions").
+		Select("encounter_executions.*, encounters.id as encounter_id, encounters.author_id, encounters.name, encounters.description, encounters.xp, encounters.status, encounters.type, encounters.longitude, encounters.latitude").
+		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
+		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", socialEncounterID, model.Social).
 		Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
@@ -164,6 +166,19 @@ func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, to
 	}
 
 	return &encounterExecution, nil
+}
+
+func (r *EncounterExecutionRepository) FindAllActiveSocialExcludingID(socialEncounterID, excludeID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch active EncounterExecutions with associated Encounter, matching social Encounter ID and excluding specific ID
+	if err := r.DB.Preload("Encounter").
+		Where("encounter_id = ? AND encounter.type = ? AND status = ? AND id != ?", socialEncounterID, model.Social, model.Active, excludeID).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
 }
 
 func (r *EncounterExecutionRepository) UpdateRange(encounters []model.EncounterExecution) ([]model.EncounterExecution, error) {

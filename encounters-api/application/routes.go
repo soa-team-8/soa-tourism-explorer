@@ -65,6 +65,19 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", executionHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{touristId}/{id}", executionHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{touristId}/{id}", executionHandler.DeleteByID).Methods("DELETE")
+
+	//Complex routes
+	router.HandleFunc("/activate/{touristId}/{encounterId}", executionHandler.Activate).Methods("PUT")
+	router.HandleFunc("/complete/{touristId}/{executionId}", executionHandler.Complete).Methods("PUT")
+
+	router.HandleFunc("/get-by-tour/{id}", executionHandler.GetByTour).Methods("GET")
+	router.HandleFunc("/get-active-by-tour/{id}", executionHandler.GetActiveByTour).Methods("GET")
+	router.HandleFunc("/get-all-by-tourist/{id}", executionHandler.GetAllByTourist).Methods("GET")
+	router.HandleFunc("/get-completed-by-tourist/{id}", executionHandler.Complete).Methods("GET")
+
+	router.HandleFunc("/social-encounter/check-range/{id}/{tourId}", executionHandler.CheckPosition).Methods("GET")
+	router.HandleFunc("/location-encounter/check-range/{id}/{tourId}", executionHandler.CheckPositionLocationEncounter).
+		Methods("GET")
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {

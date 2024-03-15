@@ -21,7 +21,7 @@ type Encounter struct {
 	AuthorID    uint64          `json:"authorId"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
-	XP          uint64          `json:"XP"`
+	XP          int32           `json:"XP"`
 	Status      EncounterStatus `json:"status"`
 	Type        EncounterType   `json:"type"`
 	Longitude   float64         `json:"longitude"`

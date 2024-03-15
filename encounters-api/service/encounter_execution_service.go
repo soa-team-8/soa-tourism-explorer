@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"math"
+	"time"
 )
 
 type EncounterExecutionService struct {
@@ -193,7 +194,7 @@ func (service *EncounterExecutionService) Activate(encounterID, touristID uint64
 		return model.EncounterExecution{}, fmt.Errorf("tourist not in range")
 	}
 
-	model.EncounterExecution.Activate(*execution)
+	execution.Activate()
 
 	updatedExecution, err := service.ExecutionRepo.Update(*execution)
 	if err != nil {
@@ -203,8 +204,53 @@ func (service *EncounterExecutionService) Activate(encounterID, touristID uint64
 	return updatedExecution, nil
 }
 
-func (service *EncounterExecutionService) GetVisibleByTour(tourID, touristId uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (model.EncounterExecution, error) {
-	// TO-DO get encounterIDs from checkpoints from front
+func (service *EncounterExecutionService) Complete(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, int32, error) {
+	execution, err := service.ExecutionRepo.FindByID(executionID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("execution with ID %d not found", executionID)
+	}
+
+	if execution.TouristID != touristID {
+		return nil, 0, fmt.Errorf("not tourist encounter execution")
+	}
+
+	if execution.Status != model.Active {
+		return nil, 0, fmt.Errorf("not valid status")
+	}
+
+	isInRange := service.isTouristInRange(*execution, touristLongitude, touristLatitude)
+
+	if !isInRange {
+		return nil, 0, fmt.Errorf("tourist not in range")
+	}
+
+	execution.Complete()
+
+	if execution.Encounter.Type == model.Social {
+		err := service.updateAllCompletedSocial(execution.EncounterID)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	if execution.Encounter.Type == model.Location {
+		err := service.updateAllCompletedLocation(execution.EncounterID)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	updatedExecution, err := service.ExecutionRepo.Update(*execution)
+	if err != nil {
+		return &model.EncounterExecution{}, 0, fmt.Errorf("execution cannot be updated: %v", err)
+	}
+
+	// TODO update user XP points
+	return &updatedExecution, updatedExecution.Encounter.XP, nil
+}
+
+func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (model.EncounterExecution, error) {
+	// TO-DO get encounterIDs from checkpoints from front (InternalService)
 	encounters, err := service.EncounterRepo.FindByIds(encounterIDs)
 	if err != nil {
 		return model.EncounterExecution{}, fmt.Errorf("encounters not found")
@@ -226,7 +272,88 @@ func (service *EncounterExecutionService) GetVisibleByTour(tourID, touristId uin
 	if closestEncounter == nil {
 		return model.EncounterExecution{}, errors.New("no close encounter found")
 	}
-	return model.EncounterExecution{}, nil
+
+	// TODO ask Anja what to do...
+	//bestDistance := model.CalculateDistance(closestEncounter.Longitude, closestEncounter.Latitude, touristLongitude, touristLatitude)
+
+	potentialEncounter, err := service.ExecutionRepo.FindByEncounterAndTourist(closestEncounter.ID, touristID)
+	if err != nil {
+		// If encounter execution not found, create a new one
+		newEncounterExecution := model.EncounterExecution{
+			EncounterID: closestEncounter.ID,
+			Encounter:   *closestEncounter,
+			TouristID:   touristID,
+			Status:      model.Pending, // Assuming Pending is the initial status
+			StartTime:   time.Now(),    // Set the start time to the current time
+			EndTime:     time.Time{},   // Zero time for EndTime as it's pending
+		}
+		// Save the new encounter execution
+		savedExecution, err := service.ExecutionRepo.Save(newEncounterExecution)
+
+		if err != nil {
+			return model.EncounterExecution{}, fmt.Errorf("execution cannot be created: %v", err)
+		}
+		return savedExecution, nil
+	}
+
+	return *potentialEncounter, nil
+
+}
+
+func (service *EncounterExecutionService) CheckIfInRange(executionID, touristId uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, error) {
+	oldExecution, err := service.ExecutionRepo.FindByID(executionID)
+	if err != nil {
+		return nil, fmt.Errorf("execution with ID %d not found", executionID)
+	}
+	if oldExecution.Status != model.Active {
+		return nil, fmt.Errorf("execution not activated")
+	}
+
+	// TODO use SocialEncounterRepository to get SocialEncounter
+	//socialEncounter, err := service.EncounterRepo.FindByID(oldExecution.EncounterID)
+	// TODO add CheckIfInRange in SocialEncounter model
+
+	// TODO use SocialEncounterRepository to Update SocialEncounter
+
+	// TODO Check RequiredPeopleNumber from SocialEncounter
+
+	/*
+		allActiveSocialEncounters, err := service.ExecutionRepo.FindAllBySocialEncounter(socialEncounter.ID)
+		if err != nil {
+			return nil, fmt.Errorf("execution with ID %d not found", executionID)
+		}
+	*/
+
+	return nil, nil
+
+}
+
+func (service *EncounterExecutionService) updateAllCompletedSocial(encounterID uint64) error {
+	executions, err := service.ExecutionRepo.FindAllBySocialEncounter(encounterID)
+	if err != nil {
+		return err
+	}
+
+	_, err = service.ExecutionRepo.UpdateRange(executions)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *EncounterExecutionService) updateAllCompletedLocation(encounterID uint64) error {
+	executions, err := service.ExecutionRepo.FindAllByLocationEncounter(encounterID)
+	if err != nil {
+		return err
+	}
+
+	_, err = service.ExecutionRepo.UpdateRange(executions)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (service *EncounterExecutionService) isTouristInRange(execution model.EncounterExecution, touristLongitude, touristLatitude float64) bool {

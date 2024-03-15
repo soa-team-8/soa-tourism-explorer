@@ -7,7 +7,7 @@ type EncounterDto struct {
 	ID                uint64   `json:"id"`
 	Name              string   `json:"name"`
 	Description       string   `json:"description"`
-	XP                int      `json:"XP"`
+	XP                int32    `json:"XP"`
 	Status            string   `json:"status"`
 	Type              string   `json:"type"`
 	Longitude         float64  `json:"longitude"`
@@ -29,7 +29,7 @@ func (e *EncounterDto) ToModel() model.Encounter {
 		AuthorID:    e.AuthorID,
 		Name:        e.Name,
 		Description: e.Description,
-		XP:          uint64(e.XP),
+		XP:          e.XP,
 		Status:      status,
 		Type:        encounterType,
 		Longitude:   e.Longitude,
@@ -51,7 +51,7 @@ func ToDto(encounter model.Encounter) EncounterDto {
 		ID:                encounter.ID,
 		Name:              encounter.Name,
 		Description:       encounter.Description,
-		XP:                int(encounter.XP),
+		XP:                encounter.XP,
 		Status:            mapStatusToString(encounter.Status),
 		Type:              mapTypeToString(encounter.Type),
 		Longitude:         encounter.Longitude,
