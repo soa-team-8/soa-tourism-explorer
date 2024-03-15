@@ -79,7 +79,7 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 
 	router.HandleFunc("/get-by-tour/{id}", executionHandler.GetByTour).Methods("GET")
 	router.HandleFunc("/get-active-by-tour/{id}", executionHandler.GetActiveByTour).Methods("GET")
-	router.HandleFunc("/get-all-by-tourist/{id}", executionHandler.GetAllByTourist).Methods("GET")
+	router.HandleFunc("/get-all-by-tourist/{touristId}", executionHandler.GetAllByTourist).Methods("GET")
 	router.HandleFunc("/get-completed-by-tourist/{id}", executionHandler.Complete).Methods("GET")
 
 	router.HandleFunc("/social-encounter/check-range/{id}/{tourId}", executionHandler.CheckPosition).Methods("GET")

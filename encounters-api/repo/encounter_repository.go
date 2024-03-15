@@ -12,7 +12,7 @@ type EncounterRepository struct {
 	DB *gorm.DB
 }
 
-func NewEncounterRepositoryRepository(db *gorm.DB) *EncounterRepository {
+func NewEncounterRepository(db *gorm.DB) *EncounterRepository {
 	return &EncounterRepository{DB: db}
 }
 

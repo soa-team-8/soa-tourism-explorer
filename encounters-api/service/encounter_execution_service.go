@@ -11,14 +11,17 @@ import (
 )
 
 type EncounterExecutionService struct {
-	ExecutionRepo *repo.EncounterExecutionRepository
-	EncounterRepo *repo.EncounterRepository
+	ExecutionRepo         *repo.EncounterExecutionRepository
+	EncounterRepo         *repo.EncounterRepository
+	SocialEncounterRepo   *repo.SocialEncounterRepository
+	LocationEncounterRepo *repo.HiddenLocationRepository
 }
 
 func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	return &EncounterExecutionService{
-		ExecutionRepo: repo.NewEncounterExecutionRepository(db),
-		EncounterRepo: repo.NewEncounterRepositoryRepository(db),
+		ExecutionRepo:       repo.NewEncounterExecutionRepository(db),
+		EncounterRepo:       repo.NewEncounterRepository(db),
+		SocialEncounterRepo: repo.NewSocialEncounterRepository(db),
 	}
 }
 
@@ -128,7 +131,7 @@ func (service *EncounterExecutionService) GetAllByEncounter(encounterID uint64) 
 }
 
 func (service *EncounterExecutionService) GetAllBySocialEncounter(encounterID uint64) ([]model.EncounterExecution, error) {
-	executions, err := service.ExecutionRepo.FindAllBySocialEncounter(encounterID)
+	executions, err := service.ExecutionRepo.FindAllByType(encounterID, model.Social)
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintln("Executions not found"))
 	}
@@ -137,7 +140,7 @@ func (service *EncounterExecutionService) GetAllBySocialEncounter(encounterID ui
 }
 
 func (service *EncounterExecutionService) GetAllByLocationEncounter(encounterID uint64) ([]model.EncounterExecution, error) {
-	executions, err := service.ExecutionRepo.FindAllByLocationEncounter(encounterID)
+	executions, err := service.ExecutionRepo.FindAllByType(encounterID, model.Location)
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintln("Executions not found"))
 	}
@@ -329,7 +332,7 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristId 
 }
 
 func (service *EncounterExecutionService) updateAllCompletedSocial(encounterID uint64) error {
-	executions, err := service.ExecutionRepo.FindAllBySocialEncounter(encounterID)
+	executions, err := service.ExecutionRepo.FindAllByType(encounterID, model.Social)
 	if err != nil {
 		return err
 	}
@@ -343,7 +346,7 @@ func (service *EncounterExecutionService) updateAllCompletedSocial(encounterID u
 }
 
 func (service *EncounterExecutionService) updateAllCompletedLocation(encounterID uint64) error {
-	executions, err := service.ExecutionRepo.FindAllByLocationEncounter(encounterID)
+	executions, err := service.ExecutionRepo.FindAllByType(encounterID, model.Location)
 	if err != nil {
 		return err
 	}
@@ -358,19 +361,33 @@ func (service *EncounterExecutionService) updateAllCompletedLocation(encounterID
 
 func (service *EncounterExecutionService) isTouristInRange(execution model.EncounterExecution, touristLongitude, touristLatitude float64) bool {
 	const thresholdDistance = 300
-	distance := model.CalculateDistance(execution.Encounter.Longitude, execution.Encounter.Latitude, touristLongitude, touristLatitude)
 
-	if execution.Encounter.Type == model.Misc && distance < thresholdDistance {
-		return true
-	}
-	// TODO Check for social
-	if execution.Encounter.Type == model.Social {
-		return true
-	}
-	// TODO Check for location
-	if execution.Encounter.Type == model.Location {
-		return true
+	calculateDistance := func(encounter model.Encounter) float64 {
+		return model.CalculateDistance(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
 	}
 
-	return false
+	switch execution.Encounter.Type {
+	case model.Misc:
+		distance := calculateDistance(execution.Encounter)
+		return distance < thresholdDistance
+
+	case model.Social:
+		socialEncounter, err := service.SocialEncounterRepo.FindById(execution.EncounterID)
+		if err != nil {
+			return false
+		}
+		socialEncDistance := calculateDistance(socialEncounter.Encounter)
+		return socialEncDistance <= socialEncounter.Range
+
+	case model.Location:
+		locationEncounter, err := service.LocationEncounterRepo.FindById(execution.EncounterID)
+		if err != nil {
+			return false
+		}
+		locationEncDistance := calculateDistance(locationEncounter.Encounter)
+		return locationEncDistance <= locationEncounter.Range
+
+	default:
+		return false
+	}
 }

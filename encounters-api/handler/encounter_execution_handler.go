@@ -203,6 +203,19 @@ func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http
 }
 
 func (e *EncounterExecutionHandler) GetByTour(resp http.ResponseWriter, req *http.Request) {
+	touristId, err := e.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounters, err := e.ExecutionService.GetAllByTourist(touristId)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, encounters)
 
 }
 

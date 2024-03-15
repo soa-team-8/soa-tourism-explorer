@@ -127,14 +127,14 @@ func (r *EncounterExecutionRepository) FindAllByEncounter(encounterID uint64) ([
 	return encounterExecutions, nil
 }
 
-func (r *EncounterExecutionRepository) FindAllBySocialEncounter(socialEncounterID uint64) ([]model.EncounterExecution, error) {
+func (r *EncounterExecutionRepository) FindAllByType(socialEncounterID uint64, encounterType model.EncounterType) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
 	if err := r.DB.
 		Table("encounter_executions").
 		Select("encounter_executions.*, encounters.id as encounter_id, encounters.author_id, encounters.name, encounters.description, encounters.xp, encounters.status, encounters.type, encounters.longitude, encounters.latitude").
 		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
-		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", socialEncounterID, model.Social).
+		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", socialEncounterID, encounterType).
 		Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
@@ -142,18 +142,22 @@ func (r *EncounterExecutionRepository) FindAllBySocialEncounter(socialEncounterI
 	return encounterExecutions, nil
 }
 
+/*
 func (r *EncounterExecutionRepository) FindAllByLocationEncounter(locationEncounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
-	// Query to fetch EncounterExecutions with associated Encounter and matching location Encounter ID and type
-	if err := r.DB.Preload("Encounter").
-		Where("encounter_id = ? AND encounter.type = ?", locationEncounterID, model.Location).
+	if err := r.DB.
+		Table("encounter_executions").
+		Select("encounter_executions.*, encounters.id as encounter_id, encounters.author_id, encounters.name, encounters.description, encounters.xp, encounters.status, encounters.type, encounters.longitude, encounters.latitude").
+		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
+		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", locationEncounterID, model.Location).
 		Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
 
 	return encounterExecutions, nil
 }
+*/
 
 func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, touristID uint64) (*model.EncounterExecution, error) {
 	var encounterExecution model.EncounterExecution
