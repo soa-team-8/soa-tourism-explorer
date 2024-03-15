@@ -5,7 +5,8 @@ import (
 )
 
 type CheckpointCompletion struct {
-	TourExecutionID int64
-	CheckpointID    int64
-	CompletionTime  time.Time
+	ID              uint64    `json:"id" gorm:"primaryKey;autoIncrement"`
+	TourExecutionID uint64    `json:"tourExecutionId" gorm:"not null"`
+	CheckpointID    uint64    `json:"checkpointId" gorm:"not null"`
+	CompletionTime  time.Time `json:"completitionTime"`
 }
