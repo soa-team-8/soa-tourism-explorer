@@ -16,8 +16,8 @@ type TourExecutionService struct {
 func (service *TourExecutionService) Create(uid int, tid int) (model.TourExecution, error) {
 	//provera da li turu poseduje user
 	tourExecution := model.TourExecution{
-		TouristID: uint64(uid),
-		//TourID:          tid,
+		TouristID:       uint64(uid),
+		TourID:          uint64(tid),
 		Start:           time.Now(),
 		LastActivity:    time.Now(),
 		ExecutionStatus: 2,

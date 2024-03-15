@@ -20,7 +20,7 @@ func (repo *CheckpointCompletionRepository) Save(checkpointCompletion model.Chec
 
 func (repo *CheckpointCompletionRepository) FindByIds(eid int, cid int) (*model.CheckpointCompletion, error) {
 	var checkpointCompletion model.CheckpointCompletion
-	if err := repo.DB.Where("execution_id = ? AND checkpoint_id = ?", eid, cid).First(&checkpointCompletion).Error; err != nil {
+	if err := repo.DB.Where("tour_execution_id = ? AND checkpoint_id = ?", eid, cid).First(&checkpointCompletion).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

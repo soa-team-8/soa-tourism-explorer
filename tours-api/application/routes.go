@@ -124,6 +124,9 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 		TourExecutionRepository: &repository.TourExecutionRepository{
 			DB: a.db,
 		},
+		CheckpointCompletionRepository: &repository.CheckpointCompletionRepository{
+			DB: a.db,
+		},
 	}
 
 	tourExecutionHandler := &handler.TourExecutionHandler{

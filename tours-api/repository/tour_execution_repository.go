@@ -20,7 +20,7 @@ func (repo *TourExecutionRepository) Save(tourExecution model.TourExecution) err
 
 func (repo *TourExecutionRepository) FindInProgressByIds(uid int, tid int) (*model.TourExecution, error) {
 	var tourExecution model.TourExecution
-	if err := repo.DB.Where("tour_id = ? AND tourist_id = ? AND execution_status = ?", tid, uid, model.InProgress).First(&tourExecution).Error; err != nil {
+	if err := repo.DB.Preload("Tour.Checkpoints").Preload("Tour").Preload("CompletedCheckpoints").Where("tour_id = ? AND tourist_id = ? AND execution_status = ?", tid, uid, model.InProgress).First(&tourExecution).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -31,7 +31,7 @@ func (repo *TourExecutionRepository) FindInProgressByIds(uid int, tid int) (*mod
 
 func (repo *TourExecutionRepository) FindByID(id int) (*model.TourExecution, error) {
 	var tourExecution model.TourExecution
-	if err := repo.DB.First(&tourExecution, id).Error; err != nil {
+	if err := repo.DB.Preload("Tour.Checkpoints").Preload("Tour").Preload("CompletedCheckpoints").First(&tourExecution, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
