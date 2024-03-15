@@ -93,6 +93,7 @@ func (a *App) loadCheckpointRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", checkpointHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}/tour", checkpointHandler.GetAllByTourID).Methods("GET")
 	router.HandleFunc("/{id}/checkpoint-secret", checkpointHandler.CreateOrUpdateCheckpointSecret).Methods("PUT")
+	router.HandleFunc("/setEnc/{checkpointId}/{encId}/{isSecretPrerequisite}", checkpointHandler.SetCheckpointEncounter).Methods("PUT")
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {

@@ -185,6 +185,7 @@ func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
 		LocationLongitude: *e.LocationLongitude,
 		LocationLatitude:  *e.LocationLatitude,
 		Image:             pq.StringArray(e.Image),
+		Range:             *e.Range,
 	}
 }
 
@@ -195,6 +196,7 @@ func ToHiddenLocationDtoList(hiddenLocationEncounters []model.HiddenLocationEnco
 		encounterDtos[i].LocationLongitude = &encounter.LocationLongitude
 		encounterDtos[i].LocationLatitude = &encounter.LocationLatitude
 		encounterDtos[i].Image = encounter.Image
+		encounterDtos[i].Range = &encounter.Range
 	}
 	return encounterDtos
 }
@@ -204,5 +206,6 @@ func ToHiddenLocationDto(hiddenLocationEncounter model.HiddenLocationEncounter) 
 	dto.LocationLongitude = &hiddenLocationEncounter.LocationLongitude
 	dto.LocationLatitude = &hiddenLocationEncounter.LocationLatitude
 	dto.Image = hiddenLocationEncounter.Image
+	dto.Range = &hiddenLocationEncounter.Range
 	return dto
 }
