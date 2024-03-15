@@ -1,6 +1,9 @@
 package dto
 
-import "encounters/model"
+import (
+	"encounters/model"
+	"github.com/lib/pq"
+)
 
 type EncounterDto struct {
 	AuthorID          uint64   `json:"authorId"`
@@ -114,4 +117,95 @@ func mapTypeToString(encounterType model.EncounterType) string {
 	default:
 		return "Unknown"
 	}
+}
+
+//-------------------------------------- social encounter mapping ---------------------------------------
+
+func (e *EncounterDto) ToSocialModel() model.SocialEncounter {
+	status := mapStringToStatus(e.Status)
+	encounterType := mapStringToType(e.Type)
+
+	return model.SocialEncounter{
+		EncounterID: e.ID,
+		Encounter: model.Encounter{
+			ID:          e.ID,
+			AuthorID:    e.AuthorID,
+			Name:        e.Name,
+			Description: e.Description,
+			XP:          uint64(e.XP),
+			Status:      status,
+			Type:        encounterType,
+			Longitude:   e.Longitude,
+			Latitude:    e.Latitude,
+		},
+		RequiredPeople:    *e.RequiredPeople,
+		Range:             *e.Range,
+		ActiveTouristsIds: e.ActiveTouristsIDs,
+	}
+}
+
+func ToSocialDtoList(socialEncounters []model.SocialEncounter) []EncounterDto {
+	encounterDtos := make([]EncounterDto, len(socialEncounters))
+	for i, encounter := range socialEncounters {
+		encounterDtos[i] = ToDto(encounter.Encounter)
+		encounterDtos[i].RequiredPeople = &encounter.RequiredPeople
+		encounterDtos[i].Range = &encounter.Range
+		encounterDtos[i].ActiveTouristsIDs = encounter.ActiveTouristsIds
+	}
+	return encounterDtos
+}
+
+func ToSocialDto(socialEncounter model.SocialEncounter) EncounterDto {
+	dto := ToDto(socialEncounter.Encounter)
+	dto.RequiredPeople = &socialEncounter.RequiredPeople
+	dto.Range = &socialEncounter.Range
+	dto.ActiveTouristsIDs = socialEncounter.ActiveTouristsIds
+	return dto
+}
+
+//-----------------------------------------Hidden location enc mapping-----------------------------------------------------
+
+func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
+	status := mapStringToStatus(e.Status)
+	encounterType := mapStringToType(e.Type)
+
+	return model.HiddenLocationEncounter{
+		EncounterID: e.ID,
+		Encounter: model.Encounter{
+			ID:          e.ID,
+			AuthorID:    e.AuthorID,
+			Name:        e.Name,
+			Description: e.Description,
+			XP:          uint64(e.XP),
+			Status:      status,
+			Type:        encounterType,
+			Longitude:   e.Longitude,
+			Latitude:    e.Latitude,
+		},
+		LocationLongitude: *e.LocationLongitude,
+		LocationLatitude:  *e.LocationLatitude,
+		Image:             pq.StringArray(e.Image),
+		Range:             *e.Range,
+	}
+}
+
+func ToHiddenLocationDtoList(hiddenLocationEncounters []model.HiddenLocationEncounter) []EncounterDto {
+	encounterDtos := make([]EncounterDto, len(hiddenLocationEncounters))
+	for i, encounter := range hiddenLocationEncounters {
+		encounterDtos[i] = ToDto(encounter.Encounter)
+		encounterDtos[i].LocationLongitude = &encounter.LocationLongitude
+		encounterDtos[i].LocationLatitude = &encounter.LocationLatitude
+		encounterDtos[i].Image = encounter.Image
+		encounterDtos[i].Range = &encounter.Range
+	}
+	return encounterDtos
+}
+
+func ToHiddenLocationDto(hiddenLocationEncounter model.HiddenLocationEncounter) EncounterDto {
+	dto := ToDto(hiddenLocationEncounter.Encounter)
+	dto.LocationLongitude = &hiddenLocationEncounter.LocationLongitude
+	dto.LocationLatitude = &hiddenLocationEncounter.LocationLatitude
+	dto.Image = hiddenLocationEncounter.Image
+	dto.Range = &hiddenLocationEncounter.Range
+	return dto
 }

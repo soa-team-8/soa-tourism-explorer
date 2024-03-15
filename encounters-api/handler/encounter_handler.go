@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"encounters/dto"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"errors"
 
@@ -113,25 +115,16 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req *http.Request) {
 	// Dobijanje vrednosti iz putanje pomoću gorilla/mux
 	vars := mux.Vars(req)
-	checkpointIDStr := vars["checkpointId"]
-	isSecretPrerequisiteStr := vars["isSecretPrerequisite"]
 	levelStr := vars["level"]
 	userIDStr := vars["userId"]
 
-	// Pretvaranje stringova u odgovarajuće tipove
-	checkpointID, err := strconv.Atoi(checkpointIDStr)
+	err := req.ParseMultipartForm(10 << 20)
 	if err != nil {
-		e.HandleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	userID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		e.HandleError(resp, err, http.StatusBadRequest)
-		return
-	}
-
-	isSecretPrerequisite, err := strconv.ParseBool(isSecretPrerequisiteStr)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -143,14 +136,61 @@ func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req 
 		return
 	}
 
+	newEncounterDto := &dto.EncounterDto{}
 	// Ostatak koda ostaje nepromenjen
-	newEncounterDto, err := e.Decode(req.Body, &dto.EncounterDto{})
+	err = json.NewDecoder(strings.NewReader(req.FormValue("encounter"))).Decode(&newEncounterDto)
 	if err != nil {
-		e.HandleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	savedEncounterDto, err := e.EncounterService.CreateTouristEncounter(*newEncounterDto.(*dto.EncounterDto), checkpointID, isSecretPrerequisite, level, uint64(userID))
+	images := req.MultipartForm.File["pictures"]
+
+	imageService := service.NewImageService()
+	uploadedImageNames, err := imageService.UploadImages(images)
+	newEncounterDto.Image = uploadedImageNames
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	savedEncounterDto, err := e.EncounterService.CreateTouristEncounter(*newEncounterDto, level, uint64(userID))
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
+}
+
+func (e *EncounterHandler) CreateAuthorEncounter(resp http.ResponseWriter, req *http.Request) {
+	// Dobijanje vrednosti iz putanje pomoću gorilla/mux
+
+	err := req.ParseMultipartForm(10 << 20)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	newEncounterDto := &dto.EncounterDto{}
+	// Ostatak koda ostaje nepromenjen
+	err = json.NewDecoder(strings.NewReader(req.FormValue("encounter"))).Decode(&newEncounterDto)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	images := req.MultipartForm.File["pictures"]
+
+	imageService := service.NewImageService()
+	uploadedImageNames, err := imageService.UploadImages(images)
+	newEncounterDto.Image = uploadedImageNames
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	savedEncounterDto, err := e.EncounterService.CreateAuthorEncounter(*newEncounterDto)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return

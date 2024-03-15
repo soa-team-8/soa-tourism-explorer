@@ -28,6 +28,12 @@ func (a *App) loadRoutes() {
 	encounterRequestRouter := router.PathPrefix("/requests").Subrouter()
 	a.loadEncounterRequestRoutes(encounterRequestRouter)
 
+	socialEncounterRouter := router.PathPrefix("/encounters/social").Subrouter()
+	a.loadSocialEncounterRoutes(socialEncounterRouter)
+
+	hiddenLocationEncounterRouter := router.PathPrefix("/encounters/hiddenLoc").Subrouter()
+	a.loadHiddenLocationEncounterRoutes(hiddenLocationEncounterRouter)
+
 	a.router = router
 }
 
@@ -40,7 +46,8 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
-	router.HandleFunc("/tourist/{checkpointId}/{isSecretPrerequisite}/{level}/{userId}", encounterHandler.CreateTouristEncounter).Methods("POST")
+	router.HandleFunc("/tourist/{level}/{userId}", encounterHandler.CreateTouristEncounter).Methods("POST")
+	router.HandleFunc("/author", encounterHandler.CreateAuthorEncounter).Methods("POST")
 }
 
 func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
@@ -78,6 +85,35 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/social-encounter/check-range/{id}/{tourId}", executionHandler.CheckPosition).Methods("GET")
 	router.HandleFunc("/location-encounter/check-range/{id}/{tourId}", executionHandler.CheckPositionLocationEncounter).
 		Methods("GET")
+}
+
+func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
+	socialEncounterService := service.NewSocialEncounterService(a.db)
+	socialEncounterHandler := handler.NewSocialEncounterHandler(socialEncounterService)
+
+	router.HandleFunc("", socialEncounterHandler.Create).Methods("POST")
+	router.HandleFunc("/get-all", socialEncounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", socialEncounterHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}", socialEncounterHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{id}", socialEncounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
+	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.db)
+	hiddenLocationEncounterHandler := handler.NewHiddenLocationEncounterHandler(hiddenLocationEncounterService)
+
+	router.HandleFunc("", hiddenLocationEncounterHandler.Create).Methods("POST")
+	router.HandleFunc("/get-all", hiddenLocationEncounterHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.GetByID).Methods("GET")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.UpdateByID).Methods("PUT")
+	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	imageName := vars["imageName"]
+
+	http.ServeFile(resp, req, "wwwroot/images/"+imageName)
 }
 
 func loggerMiddleware(next http.Handler) http.Handler {
