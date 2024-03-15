@@ -6,21 +6,21 @@ import (
 )
 
 type EncounterDto struct {
-	AuthorID          uint64   `json:"authorId"`
-	ID                uint64   `json:"id"`
-	Name              string   `json:"name"`
-	Description       string   `json:"description"`
-	XP                int32    `json:"XP"`
-	Status            string   `json:"status"`
-	Type              string   `json:"type"`
-	Longitude         float64  `json:"longitude"`
-	Latitude          float64  `json:"latitude"`
-	LocationLongitude *float64 `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64 `json:"location_latitude,omitempty"`
-	Image             *string  `json:"image,omitempty"`
-	Range             *float64 `json:"range,omitempty"`
-	RequiredPeople    *int     `json:"required_people,omitempty"`
-	ActiveTouristsIDs []int    `json:"active_tourists_ids,omitempty"`
+	AuthorID          uint64         `json:"authorId"`
+	ID                uint64         `json:"id"`
+	Name              string         `json:"name"`
+	Description       string         `json:"description"`
+	XP                int32          `json:"XP"`
+	Status            string         `json:"status"`
+	Type              string         `json:"type"`
+	Longitude         float64        `json:"longitude"`
+	Latitude          float64        `json:"latitude"`
+	LocationLongitude *float64       `json:"location_longitude,omitempty"`
+	LocationLatitude  *float64       `json:"location_latitude,omitempty"`
+	Image             pq.StringArray `json:"pictures" gorm:"type:text[]"`
+	Range             *float64       `json:"range,omitempty"`
+	RequiredPeople    *int           `json:"required_people,omitempty"`
+	ActiveTouristsIDs *[]uint64      `json:"activeTouristsIds,omitempty" gorm:"type:bigint[]"`
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
@@ -132,7 +132,7 @@ func (e *EncounterDto) ToSocialModel() model.SocialEncounter {
 			AuthorID:    e.AuthorID,
 			Name:        e.Name,
 			Description: e.Description,
-			XP:          uint64(e.XP),
+			XP:          e.XP,
 			Status:      status,
 			Type:        encounterType,
 			Longitude:   e.Longitude,
@@ -176,7 +176,7 @@ func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
 			AuthorID:    e.AuthorID,
 			Name:        e.Name,
 			Description: e.Description,
-			XP:          uint64(e.XP),
+			XP:          e.XP,
 			Status:      status,
 			Type:        encounterType,
 			Longitude:   e.Longitude,

@@ -49,7 +49,7 @@ func (s *SocialEncounterHandler) GetAll(resp http.ResponseWriter, req *http.Requ
 }
 
 func (s *SocialEncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req)
+	id, err := s.GetIDFromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -65,7 +65,7 @@ func (s *SocialEncounterHandler) GetByID(resp http.ResponseWriter, req *http.Req
 }
 
 func (s *SocialEncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req)
+	id, err := s.GetIDFromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -89,7 +89,7 @@ func (s *SocialEncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.
 }
 
 func (s *SocialEncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req)
+	id, err := s.GetIDFromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
