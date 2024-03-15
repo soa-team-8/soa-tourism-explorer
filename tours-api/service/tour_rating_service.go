@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"tours/model"
 	"tours/repository"
@@ -13,7 +12,7 @@ type TourRatingService struct {
 
 func (service *TourRatingService) Create(tourRating model.TourRating) error {
 	if tourRating.Rating < 1 || tourRating.Rating > 5 {
-		return errors.New("rating must be between 1 and 5")
+		return fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
 	err := service.TourRatingRepository.Save(tourRating)
 	if err != nil {
@@ -32,7 +31,7 @@ func (service *TourRatingService) Delete(id uint64) error {
 // krijejt imidz aploud i apdejt tur egzekjusn validacija
 func (service *TourRatingService) Update(tourRating model.TourRating) error {
 	if tourRating.Rating < 1 || tourRating.Rating > 5 {
-		return errors.New("rating must be between 1 and 5")
+		return fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
 	if err := service.TourRatingRepository.Update(tourRating); err != nil {
 		return fmt.Errorf("failed to update tourRating with ID %d: %w", tourRating.ID, err)

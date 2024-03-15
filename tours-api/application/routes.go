@@ -24,10 +24,10 @@ func (a *App) loadRoutes() {
 	checkpointRouter := router.PathPrefix("/checkpoints").Subrouter()
 	a.loadCheckpointRoutes(checkpointRouter)
 
-	tourRatingRouter := router.PathPrefix("/tourRatings").Subrouter()
+	tourRatingRouter := router.PathPrefix("/tour-ratings").Subrouter()
 	a.loadTourRatingRoutes(tourRatingRouter)
 
-	tourExecutionRouter := router.PathPrefix("/tourExecutions").Subrouter()
+	tourExecutionRouter := router.PathPrefix("/tour-executions").Subrouter()
 	a.loadTourExecutionRoutes(tourExecutionRouter)
 
 	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
@@ -124,9 +124,6 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 		TourExecutionRepository: &repository.TourExecutionRepository{
 			DB: a.db,
 		},
-		CheckpointCompletionRepository: &repository.CheckpointCompletionRepository{
-			DB: a.db,
-		},
 	}
 
 	tourExecutionHandler := &handler.TourExecutionHandler{
@@ -134,9 +131,9 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 	}
 
 	router.HandleFunc("/{id}", tourExecutionHandler.CheckPosition).Methods("PUT")
-	router.HandleFunc("/{uid}/{eid}", tourExecutionHandler.Abandon).Methods("PUT")
-	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.Create).Methods("POST")
-	router.HandleFunc("/{uid}/{tid}", tourExecutionHandler.GetByIDs).Methods("GET")
+	router.HandleFunc("/{userID}/{executionID}", tourExecutionHandler.Abandon).Methods("PUT")
+	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.Create).Methods("POST")
+	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.GetByIDs).Methods("GET")
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {

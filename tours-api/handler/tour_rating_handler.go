@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
@@ -47,19 +46,12 @@ func (e *TourRatingHandler) Delete(resp http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	responseData := map[string]string{"message": "TourRating deleted successfully"}
-	jsonResponse, err := json.Marshal(responseData)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(http.StatusOK)
-	_, err = resp.Write(jsonResponse)
-	if err != nil {
-		return
-	}
+	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Tour deleted successfully")
 }
 
 func (e *TourRatingHandler) Update(resp http.ResponseWriter, req *http.Request) {

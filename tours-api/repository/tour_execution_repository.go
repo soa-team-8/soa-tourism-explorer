@@ -18,9 +18,9 @@ func (repo *TourExecutionRepository) Save(tourExecution model.TourExecution) err
 	return nil
 }
 
-func (repo *TourExecutionRepository) FindInProgressByIds(uid int, tid int) (*model.TourExecution, error) {
+func (repo *TourExecutionRepository) FindInProgressByIds(userId uint64, tourId uint64) (*model.TourExecution, error) {
 	var tourExecution model.TourExecution
-	if err := repo.DB.Preload("Tour.Checkpoints").Preload("Tour").Preload("CompletedCheckpoints").Where("tour_id = ? AND tourist_id = ? AND execution_status = ?", tid, uid, model.InProgress).First(&tourExecution).Error; err != nil {
+	if err := repo.DB.Preload("Tour.Checkpoints").Preload("Tour").Preload("CompletedCheckpoints").Where("tour_id = ? AND tourist_id = ? AND execution_status = ?", tourId, userId, model.InProgress).First(&tourExecution).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -29,7 +29,7 @@ func (repo *TourExecutionRepository) FindInProgressByIds(uid int, tid int) (*mod
 	return &tourExecution, nil
 }
 
-func (repo *TourExecutionRepository) FindByID(id int) (*model.TourExecution, error) {
+func (repo *TourExecutionRepository) FindByID(id uint64) (*model.TourExecution, error) {
 	var tourExecution model.TourExecution
 	if err := repo.DB.Preload("Tour.Checkpoints").Preload("Tour").Preload("CompletedCheckpoints").First(&tourExecution, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -41,7 +41,7 @@ func (repo *TourExecutionRepository) FindByID(id int) (*model.TourExecution, err
 }
 
 func (repo *TourExecutionRepository) Update(tourExecution model.TourExecution) error {
-	existingTourExecution, err := repo.FindByID(int(tourExecution.ID))
+	existingTourExecution, err := repo.FindByID(tourExecution.ID)
 	if err != nil {
 		return err
 	}
