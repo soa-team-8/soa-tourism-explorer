@@ -106,6 +106,9 @@ func (a *App) loadTourRatingRoutes(router *mux.Router) {
 		TourRatingRepository: &repository.TourRatingRepository{
 			DB: a.db,
 		},
+		TourExecutionRepository: &repository.TourExecutionRepository{
+			DB: a.db,
+		},
 	}
 
 	tourRatingHandler := &handler.TourRatingHandler{
