@@ -2,23 +2,45 @@ package service
 
 import (
 	"fmt"
+	"time"
 	"tours/model"
 	"tours/repository"
 )
 
 type TourRatingService struct {
-	TourRatingRepository *repository.TourRatingRepository
+	TourRatingRepository    *repository.TourRatingRepository
+	TourExecutionRepository *repository.TourExecutionRepository
 }
 
-func (service *TourRatingService) Create(tourRating model.TourRating) error {
+func (service *TourRatingService) Create(tourRating model.TourRating) (uint64, error) {
+	//TODO: check if user owns the tour
 	if tourRating.Rating < 1 || tourRating.Rating > 5 {
-		return fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
+		return 0, fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
-	err := service.TourRatingRepository.Save(tourRating)
+
+	tourExecution, err := service.TourExecutionRepository.FindInProgressByIds(tourRating.TouristID, tourRating.TourID)
 	if err != nil {
-		return fmt.Errorf("failed to create tourRating: %w", err)
+		return 0, fmt.Errorf("failed to get tourExecution: %w", err)
 	}
-	return nil
+
+	totalCheckpoints := len(tourExecution.Tour.Checkpoints)
+	completedCheckpoints := len(tourExecution.CompletedCheckpoints)
+	completionPercentage := float64(completedCheckpoints) / float64(totalCheckpoints) * 100
+	if completionPercentage < 35 {
+		return 0, fmt.Errorf("you have not completed 35 perc of the tour (%f)", completionPercentage)
+	}
+
+	lastActivityTime := tourExecution.LastActivity
+	oneWeekAgo := time.Now().AddDate(0, 0, -7)
+	if lastActivityTime.Before(oneWeekAgo) {
+		return 0, fmt.Errorf("more than a week has passed since the tour was activated")
+	}
+
+	id, err := service.TourRatingRepository.Save(tourRating)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create tourRating: %w", err)
+	}
+	return id, nil
 }
 
 func (service *TourRatingService) Delete(id uint64) error {
@@ -28,11 +50,30 @@ func (service *TourRatingService) Delete(id uint64) error {
 	return nil
 }
 
-// krijejt imidz aploud i apdejt tur egzekjusn validacija
 func (service *TourRatingService) Update(tourRating model.TourRating) error {
+	//TODO: check if user owns the tour
 	if tourRating.Rating < 1 || tourRating.Rating > 5 {
 		return fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
+
+	tourExecution, err := service.TourExecutionRepository.FindInProgressByIds(tourRating.TouristID, tourRating.TourID)
+	if err != nil {
+		return fmt.Errorf("failed to get tourExecution: %w", err)
+	}
+
+	totalCheckpoints := len(tourExecution.Tour.Checkpoints)
+	completedCheckpoints := len(tourExecution.CompletedCheckpoints)
+	completionPercentage := float64(completedCheckpoints) / float64(totalCheckpoints) * 100
+	if completionPercentage < 35 {
+		return fmt.Errorf("you have not completed 35 perc of the tour (%f)", completionPercentage)
+	}
+
+	lastActivityTime := tourExecution.LastActivity
+	oneWeekAgo := time.Now().AddDate(0, 0, -7)
+	if lastActivityTime.Before(oneWeekAgo) {
+		return fmt.Errorf("more than a week has passed since the tour was activated")
+	}
+
 	if err := service.TourRatingRepository.Update(tourRating); err != nil {
 		return fmt.Errorf("failed to update tourRating with ID %d: %w", tourRating.ID, err)
 	}

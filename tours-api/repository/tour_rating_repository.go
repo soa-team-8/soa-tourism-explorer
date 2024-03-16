@@ -10,12 +10,12 @@ type TourRatingRepository struct {
 	DB *gorm.DB
 }
 
-func (repo *TourRatingRepository) Save(tourRating model.TourRating) error {
+func (repo *TourRatingRepository) Save(tourRating model.TourRating) (uint64, error) {
 	result := repo.DB.Create(&tourRating)
 	if result.Error != nil {
-		return result.Error
+		return 0, result.Error
 	}
-	return nil
+	return tourRating.ID, nil
 }
 
 func (repo *TourRatingRepository) Delete(id uint64) error {
