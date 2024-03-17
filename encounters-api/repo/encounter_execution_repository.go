@@ -11,6 +11,10 @@ type EncounterExecutionRepository struct {
 	DB *gorm.DB
 }
 
+func NewEncounterExecutionRepository(db *gorm.DB) *EncounterExecutionRepository {
+	return &EncounterExecutionRepository{DB: db}
+}
+
 func (r *EncounterExecutionRepository) Save(encounterExecution model.EncounterExecution) (model.EncounterExecution, error) {
 	result := r.DB.Create(&encounterExecution)
 	if result.Error != nil {
@@ -31,7 +35,7 @@ func (r *EncounterExecutionRepository) FindByID(id uint64) (*model.EncounterExec
 
 func (r *EncounterExecutionRepository) FindAll() ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
-	if err := r.DB.Find(&encounterExecutions).Error; err != nil {
+	if err := r.DB.Preload("Encounter").Find(&encounterExecutions).Error; err != nil {
 		return nil, err
 	}
 	return encounterExecutions, nil
@@ -58,4 +62,148 @@ func (r *EncounterExecutionRepository) Update(encounterExecution model.Encounter
 	}
 
 	return encounterExecution, nil
+}
+
+// New methods with complex queries
+func (r *EncounterExecutionRepository) FindAllByTourist(touristID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch EncounterExecutions with associated Encounter and matching TouristID
+	if err := r.DB.Preload("Encounter").Where("tourist_id = ?", touristID).Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+
+func (r *EncounterExecutionRepository) FindAllActiveByTourist(touristID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch active EncounterExecutions with associated Encounter and matching TouristID
+	if err := r.DB.Preload("Encounter").
+		Where("tourist_id = ? AND status = ?", touristID, model.Active).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+
+func (r *EncounterExecutionRepository) FindAllCompletedByTourist(touristID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch completed EncounterExecutions with associated Encounter and matching TouristID
+	if err := r.DB.Preload("Encounter").
+		Where("tourist_id = ? AND status = ?", touristID, model.Completed).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+
+func (r *EncounterExecutionRepository) FindByEncounter(encounterID uint64) (*model.EncounterExecution, error) {
+	var encounterExecution model.EncounterExecution
+
+	// Query to fetch EncounterExecution with associated Encounter matching the provided encounterID
+	if err := r.DB.Preload("Encounter").
+		Where("encounter_id = ?", encounterID).
+		First(&encounterExecution).Error; err != nil {
+		return nil, err
+	}
+
+	return &encounterExecution, nil
+}
+func (r *EncounterExecutionRepository) FindAllByEncounter(encounterID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch EncounterExecutions with associated Encounter ID
+	if err := r.DB.Preload("Encounter").
+		Where("encounter_id = ?", encounterID).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+
+func (r *EncounterExecutionRepository) FindAllByType(socialEncounterID uint64, encounterType model.EncounterType) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	if err := r.DB.
+		Preload("Encounter").
+		Table("encounter_executions").
+		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
+		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", socialEncounterID, encounterType).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+
+/*
+func (r *EncounterExecutionRepository) FindAllByLocationEncounter(locationEncounterID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	if err := r.DB.
+		Table("encounter_executions").
+		Select("encounter_executions.*, encounters.id as encounter_id, encounters.author_id, encounters.name, encounters.description, encounters.xp, encounters.status, encounters.type, encounters.longitude, encounters.latitude").
+		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
+		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", locationEncounterID, model.Location).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+*/
+
+func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, touristID uint64) (*model.EncounterExecution, error) {
+	var encounterExecution model.EncounterExecution
+
+	// Query to fetch EncounterExecution with associated Encounter and matching TouristID and EncounterID
+	if err := r.DB.Preload("Encounter").
+		Where("tourist_id = ? AND encounter_id = ?", touristID, encounterID).
+		First(&encounterExecution).Error; err != nil {
+		return nil, err
+	}
+
+	return &encounterExecution, nil
+}
+
+/*
+func (r *EncounterExecutionRepository) FindAllActiveSocialExcludingID(socialEncounterID, excludeID uint64) ([]model.EncounterExecution, error) {
+	var encounterExecutions []model.EncounterExecution
+
+	// Query to fetch active EncounterExecutions with associated Encounter, matching social Encounter ID and excluding specific ID
+	if err := r.DB.Preload("Encounter").
+		Where("encounter_id = ? AND encounter.type = ? AND status = ? AND id != ?", socialEncounterID, model.Social, model.Active, excludeID).
+		Find(&encounterExecutions).Error; err != nil {
+		return nil, err
+	}
+
+	return encounterExecutions, nil
+}
+*/
+
+func (r *EncounterExecutionRepository) UpdateRange(encounters []model.EncounterExecution) ([]model.EncounterExecution, error) {
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Save(&encounters).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	return encounters, nil
 }

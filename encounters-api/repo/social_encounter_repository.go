@@ -9,6 +9,10 @@ type SocialEncounterRepository struct {
 	Db *gorm.DB
 }
 
+func NewSocialEncounterRepository(db *gorm.DB) *SocialEncounterRepository {
+	return &SocialEncounterRepository{Db: db}
+}
+
 // CreateSocialEncounter creates a new social encounter record in the database
 func (r *SocialEncounterRepository) Save(socialEncounter model.SocialEncounter) (model.SocialEncounter, error) {
 	tx := r.Db.Begin()

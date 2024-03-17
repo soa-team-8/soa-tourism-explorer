@@ -12,6 +12,10 @@ type EncounterRepository struct {
 	DB *gorm.DB
 }
 
+func NewEncounterRepository(db *gorm.DB) *EncounterRepository {
+	return &EncounterRepository{DB: db}
+}
+
 func (r *EncounterRepository) Save(encounter model.Encounter) (model.Encounter, error) {
 	result := r.DB.Create(&encounter)
 	if result.Error != nil {
@@ -78,4 +82,18 @@ func (r *EncounterRepository) MakeEncounterPublished(id uint64) (*model.Encounte
 	}
 
 	return encounterToUpdate, nil
+}
+
+func (r *EncounterRepository) FindByIds(ids []uint64) ([]model.Encounter, error) {
+	var encounters []model.Encounter
+	if len(ids) == 0 {
+		return encounters, nil
+	}
+
+	query := r.DB.Where("id IN ?", ids).Find(&encounters)
+	if query.Error != nil {
+		return nil, query.Error
+	}
+
+	return encounters, nil
 }

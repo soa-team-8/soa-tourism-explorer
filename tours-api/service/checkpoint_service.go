@@ -85,3 +85,12 @@ func (service *CheckpointService) SetCheckpointEncounter(id uint64, encId uint64
 	_ = service.Update(*checkpoint)
 	return nil
 }
+
+func (service *CheckpointService) GetEncounterIDsByTour(tourID uint64) ([]uint64, error) {
+	encounterIDs, err := service.CheckpointRepository.FindEncounterIDsByTour(tourID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get encounterIDs for Tour with id %d: %w", tourID, err)
+	}
+
+	return encounterIDs, nil
+}

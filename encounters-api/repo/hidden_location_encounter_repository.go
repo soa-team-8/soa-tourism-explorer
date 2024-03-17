@@ -9,6 +9,10 @@ type HiddenLocationRepository struct {
 	Db *gorm.DB
 }
 
+func NewHiddenLocationRepository(db *gorm.DB) *HiddenLocationRepository {
+	return &HiddenLocationRepository{Db: db}
+}
+
 // CreateSocialEncounter creates a new social encounter record in the database
 func (r *HiddenLocationRepository) Save(hiddenLocationEncounter model.HiddenLocationEncounter) (model.HiddenLocationEncounter, error) {
 	tx := r.Db.Begin()

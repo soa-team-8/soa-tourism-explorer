@@ -71,3 +71,22 @@ func (repo *CheckpointRepository) FindAllByTourID(tourID uint64) ([]model.Checkp
 	}
 	return checkpoints, nil
 }
+
+func (repo *CheckpointRepository) FindEncounterIDsByTour(tourID uint64) ([]uint64, error) {
+	var encounterIDs []uint64
+
+	// Retrieve checkpoints for the specified tourID
+	checkpoints, err := repo.FindAllByTourID(tourID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract encounter IDs from checkpoints
+	for _, checkpoint := range checkpoints {
+		if checkpoint.EncounterID != 0 {
+			encounterIDs = append(encounterIDs, checkpoint.EncounterID)
+		}
+	}
+
+	return encounterIDs, nil
+}
