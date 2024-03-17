@@ -172,6 +172,7 @@ func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, to
 	return &encounterExecution, nil
 }
 
+/*
 func (r *EncounterExecutionRepository) FindAllActiveSocialExcludingID(socialEncounterID, excludeID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
@@ -184,6 +185,7 @@ func (r *EncounterExecutionRepository) FindAllActiveSocialExcludingID(socialEnco
 
 	return encounterExecutions, nil
 }
+*/
 
 func (r *EncounterExecutionRepository) UpdateRange(encounters []model.EncounterExecution) ([]model.EncounterExecution, error) {
 	tx := r.DB.Begin()

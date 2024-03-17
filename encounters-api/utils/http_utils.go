@@ -28,6 +28,24 @@ func (e *HttpUtils) GetDoubleFromForm(req *http.Request, paramName string) (floa
 	return strconv.ParseFloat(paramValueStr, 64)
 }
 
+func (e *HttpUtils) GetUint64SliceFromForm(req *http.Request, paramName string) ([]uint64, error) {
+	paramValues := req.Form[paramName]
+	if len(paramValues) == 0 {
+		return nil, fmt.Errorf("parameter %s not found", paramName)
+	}
+
+	var uint64Slice []uint64
+	for _, paramValue := range paramValues {
+		val, err := strconv.ParseUint(paramValue, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing parameter %s: %v", paramName, err)
+		}
+		uint64Slice = append(uint64Slice, val)
+	}
+
+	return uint64Slice, nil
+}
+
 func (e *HttpUtils) HandleError(resp http.ResponseWriter, err error, statusCode int) {
 	http.Error(resp, fmt.Sprintf("Error: %v", err), statusCode)
 }

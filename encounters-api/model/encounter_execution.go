@@ -34,14 +34,18 @@ func (ee *EncounterExecution) Complete() {
 func CalculateDistance(encounterLongitude, encounterLatitude, touristLongitude, touristLatitude float64) float64 {
 	const earthRadius = 6371000
 
+	if encounterLongitude == touristLatitude && encounterLatitude == touristLatitude {
+		return 0
+	}
+
 	lon1 := degreesToRadians(encounterLongitude)
 	lat1 := degreesToRadians(encounterLatitude)
 	lon2 := degreesToRadians(touristLongitude)
 	lat2 := degreesToRadians(touristLatitude)
 
-	dlon := lon2 - lon1
-	dlat := lat2 - lat1
-	a := math.Pow(math.Sin(dlat/2), 2) + math.Cos(lat1)*math.Cos(lat2)*math.Pow(math.Sin(dlon/2), 2)
+	dLon := lon2 - lon1
+	dLat := lat2 - lat1
+	a := math.Pow(math.Sin(dLat/2), 2) + math.Cos(lat1)*math.Cos(lat2)*math.Pow(math.Sin(dLon/2), 2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	distance := earthRadius * c

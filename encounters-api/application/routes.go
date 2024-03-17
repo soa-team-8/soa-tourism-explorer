@@ -65,7 +65,8 @@ func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
 
 func (a *App) loadExecutionRoutes(router *mux.Router) {
 	executionService := service.NewEncounterExecutionService(a.db)
-	executionHandler := handler.NewEncounterExecutionHandler(executionService)
+	encounterService := service.NewEncounterService(a.db)
+	executionHandler := handler.NewEncounterExecutionHandler(executionService, encounterService)
 
 	router.HandleFunc("/{touristId}", executionHandler.Create).Methods("POST")
 	router.HandleFunc("/get-all", executionHandler.GetAll).Methods("GET")
@@ -77,13 +78,13 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/activate/{touristId}/{encounterId}", executionHandler.Activate).Methods("PUT")
 	router.HandleFunc("/complete/{touristId}/{executionId}", executionHandler.Complete).Methods("PUT")
 
-	router.HandleFunc("/get-by-tour/{id}", executionHandler.GetByTour).Methods("GET")
-	router.HandleFunc("/get-active-by-tour/{id}", executionHandler.GetActiveByTour).Methods("GET")
+	router.HandleFunc("/get-by-tour/{touristId}", executionHandler.GetByTour).Methods("GET")
+	router.HandleFunc("/get-active-by-tour/{touristId}", executionHandler.GetActiveByTour).Methods("GET")
 	router.HandleFunc("/get-all-by-tourist/{touristId}", executionHandler.GetAllByTourist).Methods("GET")
-	router.HandleFunc("/get-completed-by-tourist/{id}", executionHandler.Complete).Methods("GET")
+	router.HandleFunc("/get-completed-by-tourist/{touristId}", executionHandler.GetAllCompletedByTourist).Methods("GET")
 
-	router.HandleFunc("/social-encounter/check-range/{id}/{tourId}", executionHandler.CheckPosition).Methods("GET")
-	router.HandleFunc("/location-encounter/check-range/{id}/{tourId}", executionHandler.CheckPositionLocationEncounter).
+	router.HandleFunc("/social-encounter/check-range/{encounterId}/{tourId}/{touristId}", executionHandler.CheckPosition).Methods("GET")
+	router.HandleFunc("/location-encounter/check-range/{encounterId}/{tourId}/{touristId}", executionHandler.CheckPositionLocationEncounter).
 		Methods("GET")
 }
 

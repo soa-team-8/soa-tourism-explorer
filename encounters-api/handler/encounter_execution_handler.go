@@ -13,11 +13,13 @@ import (
 type EncounterExecutionHandler struct {
 	*utils.HttpUtils
 	ExecutionService *service.EncounterExecutionService
+	EncounterService *service.EncounterService
 }
 
-func NewEncounterExecutionHandler(executionService *service.EncounterExecutionService) *EncounterExecutionHandler {
+func NewEncounterExecutionHandler(executionService *service.EncounterExecutionService, encounterService *service.EncounterService) *EncounterExecutionHandler {
 	return &EncounterExecutionHandler{
 		ExecutionService: executionService,
+		EncounterService: encounterService,
 	}
 }
 
@@ -172,7 +174,6 @@ func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http
 		return
 	}
 
-	// Parse longitude and latitude from form data
 	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
@@ -203,38 +204,205 @@ func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http
 }
 
 func (e *EncounterExecutionHandler) GetByTour(resp http.ResponseWriter, req *http.Request) {
-	touristId, err := e.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
+		return
+	}
+
+	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounter, err := e.ExecutionService.GetVisibleByTour(touristID, touristLongitude, touristLatitude, encounterIDs)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, encounter)
+}
+
+func (e *EncounterExecutionHandler) GetActiveByTour(resp http.ResponseWriter, req *http.Request) {
+	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	executions, err := e.ExecutionService.GetActiveByTour(touristID, encounterIDs)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedExecutions, err := e.EncounterService.AddEncounters(executions)
+
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, updatedExecutions)
+}
+
+func (e *EncounterExecutionHandler) GetAllByTourist(resp http.ResponseWriter, req *http.Request) {
+	touristID, err := e.GetIDFromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	encounters, err := e.ExecutionService.GetAllByTourist(touristId)
+	encounters, err := e.ExecutionService.GetAllByTourist(touristID)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
 	e.WriteJSONResponse(resp, http.StatusOK, encounters)
-
-}
-
-func (e *EncounterExecutionHandler) GetActiveByTour(resp http.ResponseWriter, req *http.Request) {
-
-}
-
-func (e *EncounterExecutionHandler) GetAllByTourist(resp http.ResponseWriter, req *http.Request) {
-
 }
 
 func (e *EncounterExecutionHandler) GetAllCompletedByTourist(resp http.ResponseWriter, req *http.Request) {
+	touristID, err := e.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
 
+	encounters, err := e.ExecutionService.GetAllCompletedByTourist(touristID)
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, encounters)
 }
 
 func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req *http.Request) {
+	encounterID, err := e.HttpUtils.GetIDFromRequest(req, "encounterId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	tourID, err := e.HttpUtils.GetIDFromRequest(req, "tourId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
+		return
+	}
+
+	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
+		return
+	}
+
+	execution, err := e.ExecutionService.GetWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
+
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedExecution, err := e.EncounterService.AddEncounter(*execution)
+
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, updatedExecution)
 
 }
 
 func (e *EncounterExecutionHandler) CheckPositionLocationEncounter(resp http.ResponseWriter, req *http.Request) {
+	encounterID, err := e.HttpUtils.GetIDFromRequest(req, "encounterId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
 
+	tourID, err := e.HttpUtils.GetIDFromRequest(req, "tourId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
+		return
+	}
+
+	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	if err != nil {
+		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
+		return
+	}
+
+	execution, err := e.ExecutionService.GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
+
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	updatedExecution, err := e.EncounterService.AddEncounter(*execution)
+
+	if err != nil {
+		e.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, updatedExecution)
 }

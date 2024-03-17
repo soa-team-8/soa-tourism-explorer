@@ -2,6 +2,7 @@ package service
 
 import (
 	"encounters/dto"
+	"encounters/model"
 	"encounters/repo"
 	"fmt"
 	"gorm.io/gorm"
@@ -151,4 +152,29 @@ func (service *EncounterService) CreateAuthorEncounter(encounterDto dto.Encounte
 	}
 
 	return savedEncounterDto, nil
+}
+
+func (service *EncounterService) AddEncounter(execution model.EncounterExecution) (model.EncounterExecution, error) {
+	newEncounter, err := service.EncounterRepo.FindByID(execution.EncounterID)
+	if err != nil {
+		return model.EncounterExecution{}, fmt.Errorf("encounter with ID %d not found", execution.EncounterID)
+	}
+
+	execution.Encounter = *newEncounter
+
+	return execution, nil
+}
+
+func (service *EncounterService) AddEncounters(executions []model.EncounterExecution) ([]model.EncounterExecution, error) {
+	var addedExecutions []model.EncounterExecution
+
+	for _, execution := range executions {
+		newExecution, err := service.AddEncounter(execution)
+		if err != nil {
+			return nil, fmt.Errorf("error adding encounter: %v", err)
+		}
+		addedExecutions = append(addedExecutions, newExecution)
+	}
+
+	return addedExecutions, nil
 }
