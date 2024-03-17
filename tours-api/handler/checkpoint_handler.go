@@ -245,3 +245,21 @@ func (e *CheckpointHandler) SetCheckpointEncounter(resp http.ResponseWriter, req
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, "Checkpoint encounter successfully set")
 }
+
+func (e *CheckpointHandler) GetEncounterIDsByTour(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	tourID, err := strconv.ParseUint(vars["tourId"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.CheckpointService.GetEncounterIDsByTour(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, encounterIDs)
+}
