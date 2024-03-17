@@ -154,7 +154,7 @@ func (e *EncounterExecutionHandler) Activate(resp http.ResponseWriter, req *http
 
 	updatedExecution, err := e.ExecutionService.Activate(executionID, touristID, touristLongitude, touristLatitude)
 	if err != nil {
-		http.Error(resp, fmt.Sprintf("Error activating encounter execution: %v", err), http.StatusInternalServerError)
+		http.Error(resp, fmt.Sprintf("error activating encounter execution: %v", err), http.StatusInternalServerError)
 		return
 	}
 

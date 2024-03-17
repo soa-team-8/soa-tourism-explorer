@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"math"
 	"time"
 )
 
@@ -31,54 +30,22 @@ func (ee *EncounterExecution) Complete() {
 	ee.EndTime = time.Now()
 }
 
-func CalculateDistance(encounterLongitude, encounterLatitude, touristLongitude, touristLatitude float64) float64 {
-	const earthRadius = 6371000
-
-	if encounterLongitude == touristLatitude && encounterLatitude == touristLatitude {
-		return 0
-	}
-
-	lon1 := degreesToRadians(encounterLongitude)
-	lat1 := degreesToRadians(encounterLatitude)
-	lon2 := degreesToRadians(touristLongitude)
-	lat2 := degreesToRadians(touristLatitude)
-
-	dLon := lon2 - lon1
-	dLat := lat2 - lat1
-	a := math.Pow(math.Sin(dLat/2), 2) + math.Cos(lat1)*math.Cos(lat2)*math.Pow(math.Sin(dLon/2), 2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-
-	distance := earthRadius * c
-	return distance
-}
-
-func degreesToRadians(deg float64) float64 {
-	return deg * (math.Pi / 180)
-}
-
-func IsCloseEnough(encounterLongitude, encounterLatitude, touristLongitude, touristLatitude float64) bool {
-	const thresholdDistance = 1000 // 1000 meters or 1 kilometer
-
-	distance := CalculateDistance(encounterLongitude, encounterLatitude, touristLongitude, touristLatitude)
-	return distance <= thresholdDistance
-}
-
 type EncounterExecutionStatus int
 
 const (
 	Pending EncounterExecutionStatus = iota
-	Completed
 	Active
+	Completed
 	Abandoned
 )
 
 var encounterExecutionStatusStrings = [...]string{"Pending", "Completed", "Active", "Abandoned"}
 
-func (s EncounterExecutionStatus) String() string {
-	if s < Pending || s > Abandoned {
+func (s *EncounterExecutionStatus) String() string {
+	if *s < Pending || *s > Abandoned {
 		return "Unknown"
 	}
-	return encounterExecutionStatusStrings[s]
+	return encounterExecutionStatusStrings[*s]
 }
 
 func (s *EncounterExecutionStatus) UnmarshalJSON(data []byte) error {
@@ -101,6 +68,6 @@ func (s *EncounterExecutionStatus) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s EncounterExecutionStatus) MarshalJSON() ([]byte, error) {
+func (s *EncounterExecutionStatus) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }

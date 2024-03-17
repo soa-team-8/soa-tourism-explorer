@@ -265,7 +265,7 @@ func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, tou
 	var closestEncounter *model.Encounter
 
 	for _, encounter := range encounters {
-		if model.IsCloseEnough(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude) {
+		if encounter.IsCloseEnough(touristLongitude, touristLatitude) {
 			closestEncounter = &encounter
 		}
 	}
@@ -274,12 +274,12 @@ func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, tou
 		return model.EncounterExecution{}, fmt.Errorf("no near encounter")
 	}
 
-	bestDistance := model.CalculateDistance(closestEncounter.Longitude, closestEncounter.Latitude, touristLongitude, touristLatitude)
+	bestDistance := closestEncounter.CalculateDistance(touristLongitude, touristLatitude)
 
 	for _, encounter := range encounters {
-		distance := model.CalculateDistance(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
+		distance := encounter.CalculateDistance(touristLongitude, touristLatitude)
 		isBetterDistance := distance < bestDistance
-		isCloseEnough := model.IsCloseEnough(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
+		isCloseEnough := encounter.IsCloseEnough(touristLongitude, touristLatitude)
 		if isBetterDistance && isCloseEnough {
 			bestDistance = distance
 			closestEncounter = &encounter
@@ -361,6 +361,7 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID 
 			return nil, fmt.Errorf(fmt.Sprintln("Executions not found"))
 		}
 
+		// TODO update XP for every finished encounter
 		for _, activeSocial := range socialExecutions {
 			if activeSocial.Status == model.Active && activeSocial.ID != executionID {
 				_, _, err := service.Complete(activeSocial.ID, activeSocial.TouristID, touristLatitude, touristLongitude)
@@ -397,7 +398,7 @@ func (service *EncounterExecutionService) GetWithUpdatedLocation(encounterID, to
 
 func (service *EncounterExecutionService) GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (*model.EncounterExecution, error) {
 	// TODO refactor function and extract logic
-	_, err := service.CheckIfInRange(encounterID, touristID, touristLongitude, touristLatitude)
+	_, err := service.CheckIfInRangeLocation(encounterID, touristID, touristLongitude, touristLatitude)
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintln("not execution in range"))
 	}
@@ -410,6 +411,44 @@ func (service *EncounterExecutionService) GetHiddenLocationEncounterWithUpdatedL
 
 	return &encounter, nil
 
+}
+
+func (service *EncounterExecutionService) CheckIfInRangeLocation(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, error) {
+	oldExecution, err := service.ExecutionRepo.FindByID(executionID)
+	if err != nil {
+		return nil, fmt.Errorf("execution with ID %d not found", oldExecution.ID)
+	}
+
+	if oldExecution.Status != model.Active {
+		return nil, fmt.Errorf("execution is not active")
+	}
+
+	locationEncounter, err := service.LocationEncounterRepo.FindById(oldExecution.EncounterID)
+
+	if err != nil {
+		return nil, fmt.Errorf("encounter with ID %d not found", locationEncounter.EncounterID)
+	}
+
+	isInRange := locationEncounter.CheckIfInRangeLocation(touristLongitude, touristLatitude)
+
+	if !isInRange {
+		return nil, fmt.Errorf("encounter is not in range")
+	}
+
+	_, err = service.LocationEncounterRepo.Update(*locationEncounter)
+
+	isLocationFound := locationEncounter.CheckIfLocationFound(touristLongitude, touristLatitude)
+	if !isLocationFound {
+		return nil, fmt.Errorf("location is not found")
+	}
+
+	execution, _, err := service.Complete(executionID, touristID, touristLongitude, touristLatitude)
+
+	if err != nil {
+		return oldExecution, nil
+	}
+
+	return execution, nil
 }
 
 func (service *EncounterExecutionService) updateAllCompletedSocial(encounterID uint64) error {
@@ -443,13 +482,9 @@ func (service *EncounterExecutionService) updateAllCompletedLocation(encounterID
 func (service *EncounterExecutionService) isTouristInRange(execution model.EncounterExecution, touristLongitude, touristLatitude float64) bool {
 	const thresholdDistance = 300
 
-	calculateDistance := func(encounter model.Encounter) float64 {
-		return model.CalculateDistance(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
-	}
-
 	switch execution.Encounter.Type {
 	case model.Misc:
-		distance := calculateDistance(execution.Encounter)
+		distance := execution.Encounter.CalculateDistance(touristLongitude, touristLatitude)
 		return distance < thresholdDistance
 
 	case model.Social:
@@ -457,7 +492,7 @@ func (service *EncounterExecutionService) isTouristInRange(execution model.Encou
 		if err != nil {
 			return false
 		}
-		socialEncDistance := calculateDistance(socialEncounter.Encounter)
+		socialEncDistance := execution.Encounter.CalculateDistance(touristLongitude, touristLatitude)
 		return socialEncDistance <= socialEncounter.Range
 
 	case model.Location:
@@ -465,7 +500,7 @@ func (service *EncounterExecutionService) isTouristInRange(execution model.Encou
 		if err != nil {
 			return false
 		}
-		locationEncDistance := calculateDistance(locationEncounter.Encounter)
+		locationEncDistance := execution.Encounter.CalculateDistance(touristLongitude, touristLatitude)
 		return locationEncDistance <= locationEncounter.Range
 
 	default:

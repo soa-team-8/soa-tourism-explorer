@@ -131,8 +131,8 @@ func (r *EncounterExecutionRepository) FindAllByType(socialEncounterID uint64, e
 	var encounterExecutions []model.EncounterExecution
 
 	if err := r.DB.
+		Preload("Encounter").
 		Table("encounter_executions").
-		Select("encounter_executions.*, encounters.id as encounter_id, encounters.author_id, encounters.name, encounters.description, encounters.xp, encounters.status, encounters.type, encounters.longitude, encounters.latitude").
 		Joins("LEFT JOIN encounters ON encounter_executions.encounter_id = encounters.id").
 		Where("encounter_executions.encounter_id = ? AND encounters.type = ?", socialEncounterID, encounterType).
 		Find(&encounterExecutions).Error; err != nil {
