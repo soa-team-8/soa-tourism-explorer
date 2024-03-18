@@ -2,6 +2,7 @@ package repo
 
 import (
 	"encounters/model"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -13,23 +14,19 @@ func NewSocialEncounterRepository(db *gorm.DB) *SocialEncounterRepository {
 	return &SocialEncounterRepository{Db: db}
 }
 
-// CreateSocialEncounter creates a new social encounter record in the database
 func (r *SocialEncounterRepository) Save(socialEncounter model.SocialEncounter) (model.SocialEncounter, error) {
 	tx := r.Db.Begin()
 
-	// Prvo upišite Encounter deo SocialEncountera
 	if err := tx.Create(&socialEncounter.Encounter).Error; err != nil {
 		tx.Rollback()
 		return socialEncounter, err
 	}
 
-	// Zatim upišite SocialEncounter
 	if err := tx.Create(&socialEncounter).Error; err != nil {
 		tx.Rollback()
 		return socialEncounter, err
 	}
 
-	// Commit transakcije ako nema grešaka
 	if err := tx.Commit().Error; err != nil {
 		return socialEncounter, err
 	}
@@ -37,38 +34,62 @@ func (r *SocialEncounterRepository) Save(socialEncounter model.SocialEncounter) 
 	return socialEncounter, nil
 }
 
-// GetSocialEncounterByID retrieves a social encounter record from the database by its ID
 func (r *SocialEncounterRepository) FindById(id uint64) (*model.SocialEncounter, error) {
 	socialEncounter := &model.SocialEncounter{}
-	result := r.Db.First(socialEncounter, id)
+
+	// Preload the Encounter data
+	result := r.Db.Preload("Encounter").First(socialEncounter, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return socialEncounter, nil
 }
 
-// UpdateSocialEncounter updates an existing social encounter record in the database
 func (r *SocialEncounterRepository) Update(socialEncounter model.SocialEncounter) (model.SocialEncounter, error) {
-	result := r.Db.Save(socialEncounter)
+	// Assuming r.Db is a valid GORM DB connection
+	result := r.Db.Model(&model.SocialEncounter{}).Where("encounter_id = ?", socialEncounter.EncounterID).Updates(&socialEncounter)
+
 	if result.Error != nil {
 		return model.SocialEncounter{}, result.Error
 	}
+
+	if result.RowsAffected == 0 {
+		return model.SocialEncounter{}, fmt.Errorf("social encounter with ID %d does not exist", socialEncounter.EncounterID)
+	}
+
 	return socialEncounter, nil
 }
 
-// DeleteSocialEncounter deletes a social encounter record from the database by its ID
 func (r *SocialEncounterRepository) DeleteById(id uint64) error {
-	result := r.Db.Delete(&model.SocialEncounter{}, id)
-	if result.Error != nil {
-		return result.Error
+	// Start a transaction
+	tx := r.Db.Begin()
+
+	// Find the SocialEncounter record to get its Encounter ID
+	var socialEncounter model.SocialEncounter
+	if err := tx.First(&socialEncounter, id).Error; err != nil {
+		tx.Rollback()
+		return err
 	}
+
+	if err := tx.Delete(&model.Encounter{}, socialEncounter.EncounterID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Delete(&model.SocialEncounter{}, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
 	return nil
 }
-
-// FindAll retrieves all social encounter records from the database
 func (r *SocialEncounterRepository) FindAll() ([]model.SocialEncounter, error) {
 	var socialEncounters []model.SocialEncounter
-	result := r.Db.Find(&socialEncounters)
+	result := r.Db.Preload("Encounter").Find(&socialEncounters)
 	if result.Error != nil {
 		return nil, result.Error
 	}

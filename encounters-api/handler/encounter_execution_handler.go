@@ -317,19 +317,19 @@ func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req 
 		return
 	}
 
-	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromQuery(req, "encounterIds")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	touristLongitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
 		return
 	}
 
-	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	touristLatitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLatitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
 		return

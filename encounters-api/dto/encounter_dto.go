@@ -6,21 +6,21 @@ import (
 )
 
 type EncounterDto struct {
-	AuthorID          uint64         `json:"authorId"`
-	ID                uint64         `json:"id"`
-	Name              string         `json:"name"`
-	Description       string         `json:"description"`
-	XP                int32          `json:"XP"`
-	Status            string         `json:"status"`
-	Type              string         `json:"type"`
-	Longitude         float64        `json:"longitude"`
-	Latitude          float64        `json:"latitude"`
-	LocationLongitude *float64       `json:"location_longitude,omitempty"`
-	LocationLatitude  *float64       `json:"location_latitude,omitempty"`
-	Image             pq.StringArray `json:"pictures" gorm:"type:text[]"`
-	Range             *float64       `json:"range,omitempty"`
-	RequiredPeople    *int           `json:"required_people,omitempty"`
-	ActiveTouristsIDs *[]uint64      `json:"activeTouristsIds,omitempty" gorm:"type:bigint[]"`
+	AuthorID          uint64             `json:"authorId"`
+	ID                uint64             `json:"id"`
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	XP                int32              `json:"XP"`
+	Status            string             `json:"status"`
+	Type              string             `json:"type"`
+	Longitude         float64            `json:"longitude"`
+	Latitude          float64            `json:"latitude"`
+	LocationLongitude *float64           `json:"location_longitude,omitempty"`
+	LocationLatitude  *float64           `json:"location_latitude,omitempty"`
+	Image             pq.StringArray     `json:"pictures" gorm:"type:text[]"`
+	Range             *float64           `json:"range,omitempty"`
+	RequiredPeople    *int               `json:"required_people,omitempty"`
+	ActiveTouristsIDs *model.BigIntSlice `json:"activeTouristsIds,omitempty" gorm:"type:bigint[]"`
 }
 
 func (e *EncounterDto) ToModel() model.Encounter {
@@ -140,7 +140,7 @@ func (e *EncounterDto) ToSocialModel() model.SocialEncounter {
 		},
 		RequiredPeople:    *e.RequiredPeople,
 		Range:             *e.Range,
-		ActiveTouristsIds: e.ActiveTouristsIDs,
+		ActiveTouristsIds: *e.ActiveTouristsIDs,
 	}
 }
 
@@ -150,7 +150,7 @@ func ToSocialDtoList(socialEncounters []model.SocialEncounter) []EncounterDto {
 		encounterDtos[i] = ToDto(encounter.Encounter)
 		encounterDtos[i].RequiredPeople = &encounter.RequiredPeople
 		encounterDtos[i].Range = &encounter.Range
-		encounterDtos[i].ActiveTouristsIDs = encounter.ActiveTouristsIds
+		encounterDtos[i].ActiveTouristsIDs = &encounter.ActiveTouristsIds
 	}
 	return encounterDtos
 }
@@ -159,7 +159,7 @@ func ToSocialDto(socialEncounter model.SocialEncounter) EncounterDto {
 	dto := ToDto(socialEncounter.Encounter)
 	dto.RequiredPeople = &socialEncounter.RequiredPeople
 	dto.Range = &socialEncounter.Range
-	dto.ActiveTouristsIDs = socialEncounter.ActiveTouristsIds
+	dto.ActiveTouristsIDs = &socialEncounter.ActiveTouristsIds
 	return dto
 }
 
