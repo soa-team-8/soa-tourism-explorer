@@ -24,7 +24,7 @@ func (service *TourExecutionService) Create(userID uint64, tourId uint64) (model
 
 	err := service.TourExecutionRepository.Save(tourExecution)
 	if err != nil {
-		return tourExecution, fmt.Errorf("failed to create tourExecution: %w", err) //temp te
+		return model.TourExecution{}, fmt.Errorf("failed to create tourExecution: %w", err)
 	}
 	newTourExecution, err := service.GetByIDs(userID, tourId)
 	if err != nil {
@@ -34,6 +34,17 @@ func (service *TourExecutionService) Create(userID uint64, tourId uint64) (model
 }
 
 func (service *TourExecutionService) GetByIDs(userID uint64, tourID uint64) (*model.TourExecution, error) {
+	executionExists, err := service.TourExecutionRepository.ExistsByIDs(userID, tourID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tourExecution with IDs %d, %d: %w", userID, tourID, err)
+	}
+	if !executionExists {
+		newTourExecution, err := service.Create(userID, tourID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create tourExecution: %w", err)
+		}
+		return &newTourExecution, nil
+	}
 	tourExecution, err := service.TourExecutionRepository.FindInProgressByIds(userID, tourID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tourExecution with IDs %d, %d: %w", userID, tourID, err)
@@ -51,13 +62,13 @@ func (service *TourExecutionService) Abandon(userID uint64, executionID uint64) 
 	}
 	//TODO: check if user owns the tour
 	if tourExecution.ExecutionStatus != model.InProgress {
-		return tourExecution, fmt.Errorf("can not abandon tourExecution with ID %d: %w", executionID, err)
+		return &model.TourExecution{}, fmt.Errorf("can not abandon tourExecution with ID %d: %w", executionID, err)
 	}
 	tourExecution.ExecutionStatus = model.Abandoned
 	tourExecution.LastActivity = time.Now()
 	err = service.TourExecutionRepository.Update(*tourExecution)
 	if err != nil {
-		return tourExecution, fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
+		return &model.TourExecution{}, fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
 	}
 	return tourExecution, nil
 }
@@ -77,7 +88,7 @@ func (service *TourExecutionService) CheckPosition(touristPosition model.Tourist
 		a := math.Abs(math.Round(checkpoint.Longitude*10000)/10000 - math.Round(touristPosition.Longitude*10000)/10000)
 		b := math.Abs(math.Round(checkpoint.Latitude*10000)/10000 - math.Round(touristPosition.Latitude*10000)/10000)
 
-		if a < 0.01 && b < 0.01 {
+		if a < 0.004 && b < 0.004 {
 			executionID := tourExecution.ID
 			checkpointID := tourExecution.Tour.Checkpoints[index].ID
 			completion := model.CheckpointCompletion{
