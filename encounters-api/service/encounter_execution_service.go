@@ -333,18 +333,18 @@ func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, tou
 
 }
 
-func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, error) {
+func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, int32, error) {
 	oldExecution, err := service.ExecutionRepo.FindByID(executionID)
 	if err != nil {
-		return nil, fmt.Errorf("execution with ID %d not found", executionID)
+		return nil, 0, fmt.Errorf("execution with ID %d not found", executionID)
 	}
 	if oldExecution.Status != model.Active {
-		return nil, fmt.Errorf("execution not activated")
+		return nil, 0, fmt.Errorf("execution not activated")
 	}
 
 	socialEncounter, err := service.SocialEncounterRepo.FindById(oldExecution.EncounterID)
 	if err != nil {
-		return nil, fmt.Errorf("encounter with ID %d not found", oldExecution.EncounterID)
+		return nil, 0, fmt.Errorf("encounter with ID %d not found", oldExecution.EncounterID)
 	}
 
 	socialEncounter.CheckIfInRange(touristLongitude, touristLatitude, touristID)
@@ -352,103 +352,106 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID 
 	_, err = service.SocialEncounterRepo.Update(*socialEncounter)
 
 	if err != nil {
-		return nil, fmt.Errorf("execution cannot be updated: %v", err)
+		return nil, 0, fmt.Errorf("execution cannot be updated: %v", err)
 	}
 
+	var newXP int32 = 0
 	if socialEncounter.IsRequiredPeopleNumber() {
-		socialExecutions, err := service.ExecutionRepo.FindAllByType(executionID, model.Social)
+		socialExecutions, err := service.ExecutionRepo.FindAllByType(socialEncounter.EncounterID, model.Social)
 		if err != nil {
-			return nil, fmt.Errorf(fmt.Sprintln("Executions not found"))
+			return nil, 0, fmt.Errorf(fmt.Sprintln("Executions not found"))
 		}
 
 		// TODO update XP for every finished encounter
 		for _, activeSocial := range socialExecutions {
 			if activeSocial.Status == model.Active && activeSocial.ID != executionID {
-				_, _, err := service.Complete(activeSocial.ID, activeSocial.TouristID, touristLatitude, touristLongitude)
+				_, XP, err := service.Complete(activeSocial.ID, activeSocial.TouristID, touristLatitude, touristLongitude)
 				if err != nil {
-					return nil, fmt.Errorf("error completing execution: %v", err)
+					return nil, 0, fmt.Errorf("error completing execution: %v", err)
 				}
+				newXP += XP
 			}
 		}
-		_, _, err = service.Complete(executionID, touristID, touristLatitude, touristLongitude)
+		_, XP, err := service.Complete(executionID, touristID, touristLatitude, touristLongitude)
 		if err != nil {
-			return nil, fmt.Errorf("error completing execution: %v", err)
+			return nil, 0, fmt.Errorf("error completing execution: %v", err)
 		}
+		newXP += XP
 	}
 
-	return oldExecution, nil
+	return oldExecution, newXP, nil
 
 }
 
-func (service *EncounterExecutionService) GetWithUpdatedLocation(encounterID, tourID, touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (*model.EncounterExecution, error) {
-	_, err := service.CheckIfInRange(encounterID, touristID, touristLongitude, touristLatitude)
+func (service *EncounterExecutionService) GetWithUpdatedLocation(encounterID, tourID, touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (*model.EncounterExecution, int32, error) {
+	_, XP, err := service.CheckIfInRange(encounterID, touristID, touristLongitude, touristLatitude)
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintln("not execution in range"))
+		return nil, 0, fmt.Errorf(fmt.Sprintln("not execution in range"))
 	}
 
 	encounter, err := service.GetVisibleByTour(tourID, touristLongitude, touristLatitude, encounterIDs)
 
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintln("not visible execution for tour"))
+		return nil, 0, fmt.Errorf(fmt.Sprintln("not visible execution for tour"))
 	}
 
-	return &encounter, nil
+	return &encounter, XP, nil
 
 }
 
-func (service *EncounterExecutionService) GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (*model.EncounterExecution, error) {
+func (service *EncounterExecutionService) GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID uint64, touristLongitude, touristLatitude float64, encounterIDs []uint64) (*model.EncounterExecution, int32, error) {
 	// TODO refactor function and extract logic
-	_, err := service.CheckIfInRangeLocation(encounterID, touristID, touristLongitude, touristLatitude)
+	_, XP, err := service.CheckIfInRangeLocation(encounterID, touristID, touristLongitude, touristLatitude)
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintln("not execution in range"))
+		return nil, 0, fmt.Errorf(fmt.Sprintln("not execution in range"))
 	}
 
-	encounter, err := service.GetVisibleByTour(tourID, touristLongitude, touristLatitude, encounterIDs)
+	execution, err := service.GetVisibleByTour(tourID, touristLongitude, touristLatitude, encounterIDs)
 
 	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintln("not visible execution for tour"))
+		return nil, 0, fmt.Errorf(fmt.Sprintln("not visible execution for tour"))
 	}
 
-	return &encounter, nil
+	return &execution, XP, nil
 
 }
 
-func (service *EncounterExecutionService) CheckIfInRangeLocation(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, error) {
+func (service *EncounterExecutionService) CheckIfInRangeLocation(executionID, touristID uint64, touristLongitude, touristLatitude float64) (*model.EncounterExecution, int32, error) {
 	oldExecution, err := service.ExecutionRepo.FindByID(executionID)
 	if err != nil {
-		return nil, fmt.Errorf("execution with ID %d not found", oldExecution.ID)
+		return nil, 0, fmt.Errorf("execution with ID %d not found", oldExecution.ID)
 	}
 
 	if oldExecution.Status != model.Active {
-		return nil, fmt.Errorf("execution is not active")
+		return nil, 0, fmt.Errorf("execution is not active")
 	}
 
 	locationEncounter, err := service.LocationEncounterRepo.FindById(oldExecution.EncounterID)
 
 	if err != nil {
-		return nil, fmt.Errorf("encounter with ID %d not found", locationEncounter.EncounterID)
+		return nil, 0, fmt.Errorf("encounter with ID %d not found", locationEncounter.EncounterID)
 	}
 
 	isInRange := locationEncounter.CheckIfInRangeLocation(touristLongitude, touristLatitude)
 
 	if !isInRange {
-		return nil, fmt.Errorf("encounter is not in range")
+		return nil, 0, fmt.Errorf("encounter is not in range")
 	}
 
 	_, err = service.LocationEncounterRepo.Update(*locationEncounter)
 
 	isLocationFound := locationEncounter.CheckIfLocationFound(touristLongitude, touristLatitude)
 	if !isLocationFound {
-		return nil, fmt.Errorf("location is not found")
+		return nil, 0, fmt.Errorf("location is not found")
 	}
 
-	execution, _, err := service.Complete(executionID, touristID, touristLongitude, touristLatitude)
+	execution, XP, err := service.Complete(executionID, touristID, touristLongitude, touristLatitude)
 
 	if err != nil {
-		return oldExecution, nil
+		return oldExecution, 0, nil
 	}
 
-	return execution, nil
+	return execution, XP, nil
 }
 
 func (service *EncounterExecutionService) updateAllCompletedSocial(encounterID uint64) error {

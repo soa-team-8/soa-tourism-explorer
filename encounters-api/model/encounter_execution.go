@@ -39,7 +39,7 @@ const (
 	Abandoned
 )
 
-var encounterExecutionStatusStrings = [...]string{"Pending", "Completed", "Active", "Abandoned"}
+var encounterExecutionStatusStrings = [...]string{"Pending", "Active", "Completed", "Abandoned"}
 
 func (s *EncounterExecutionStatus) String() string {
 	if *s < Pending || *s > Abandoned {

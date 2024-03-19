@@ -140,13 +140,13 @@ func (e *EncounterExecutionHandler) Activate(resp http.ResponseWriter, req *http
 	}
 
 	// Parse parameters from form data
-	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	touristLongitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
 		return
 	}
 
-	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	touristLatitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLatitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
 		return
@@ -335,7 +335,7 @@ func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req 
 		return
 	}
 
-	execution, err := e.ExecutionService.GetWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
+	execution, XP, err := e.ExecutionService.GetWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
 
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
@@ -349,7 +349,15 @@ func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req 
 		return
 	}
 
-	e.WriteJSONResponse(resp, http.StatusOK, updatedExecution)
+	responseData := struct {
+		Execution *model.EncounterExecution `json:"execution"`
+		XP        int32                     `json:"xp"`
+	}{
+		Execution: &updatedExecution,
+		XP:        XP,
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, responseData)
 
 }
 
@@ -372,25 +380,25 @@ func (e *EncounterExecutionHandler) CheckPositionLocationEncounter(resp http.Res
 		return
 	}
 
-	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromQuery(req, "encounterIds")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	touristLongitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
 		return
 	}
 
-	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	touristLatitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLatitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
 		return
 	}
 
-	execution, err := e.ExecutionService.GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
+	execution, XP, err := e.ExecutionService.GetHiddenLocationEncounterWithUpdatedLocation(encounterID, tourID, touristID, touristLongitude, touristLatitude, encounterIDs)
 
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
@@ -404,5 +412,13 @@ func (e *EncounterExecutionHandler) CheckPositionLocationEncounter(resp http.Res
 		return
 	}
 
-	e.WriteJSONResponse(resp, http.StatusOK, updatedExecution)
+	responseData := struct {
+		Execution *model.EncounterExecution `json:"execution"`
+		XP        int32                     `json:"xp"`
+	}{
+		Execution: &updatedExecution,
+		XP:        XP,
+	}
+
+	e.WriteJSONResponse(resp, http.StatusOK, responseData)
 }
