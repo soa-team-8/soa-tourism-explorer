@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"encounters/dto"
+	"encounters/model"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -154,6 +155,9 @@ func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req 
 		return
 	}
 
+	if newEncounterDto.ActiveTouristsIDs == nil {
+		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
+	}
 	savedEncounterDto, err := e.EncounterService.CreateTouristEncounter(*newEncounterDto, level, uint64(userID))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
@@ -190,6 +194,9 @@ func (e *EncounterHandler) CreateAuthorEncounter(resp http.ResponseWriter, req *
 		return
 	}
 
+	if newEncounterDto.ActiveTouristsIDs == nil {
+		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
+	}
 	savedEncounterDto, err := e.EncounterService.CreateAuthorEncounter(*newEncounterDto)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
