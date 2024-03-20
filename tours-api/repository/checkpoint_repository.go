@@ -71,3 +71,20 @@ func (repo *CheckpointRepository) FindAllByTourID(tourID uint64) ([]model.Checkp
 	}
 	return checkpoints, nil
 }
+
+func (repo *CheckpointRepository) FindEncounterIDsByTour(tourID uint64) ([]uint64, error) {
+	var encounterIDs []uint64
+
+	err := repo.DB.Table("checkpoints").
+		Where("tour_id = ?", tourID).
+		Where("encounter_id != ?", 0).
+		Pluck("DISTINCT encounter_id", &encounterIDs).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return encounterIDs, nil
+		}
+		return nil, err
+	}
+
+	return encounterIDs, nil
+}

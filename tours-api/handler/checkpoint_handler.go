@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 	"strings"
 	"tours/model"
 	"tours/service"
@@ -210,4 +212,54 @@ func (e *CheckpointHandler) CreateOrUpdateCheckpointSecret(resp http.ResponseWri
 	}
 
 	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, updatedCheckpoint)
+}
+
+func (e *CheckpointHandler) SetCheckpointEncounter(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	// Izvlačenje parametara iz putanje
+	checkpointID, err := strconv.ParseInt(vars["checkpointId"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterID, err := strconv.ParseInt(vars["encId"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	isSecretPrerequisite, err := strconv.ParseBool(vars["isSecretPrerequisite"])
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	// Poziv metode iz servisa
+	err = e.CheckpointService.SetCheckpointEncounter(uint64(checkpointID), uint64(encounterID), isSecretPrerequisite)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, "Checkpoint encounter successfully set")
+}
+
+func (e *CheckpointHandler) GetEncounterIDsByTour(resp http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	tourID, err := strconv.ParseUint(vars["tourId"], 10, 64)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
+		return
+	}
+
+	encounterIDs, err := e.CheckpointService.GetEncounterIDsByTour(tourID)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusOK, encounterIDs)
 }

@@ -12,8 +12,10 @@ type Config struct {
 
 func LoadConfig() Config {
 	cfg := Config{
-		PostgresAddress: "postgres://postgres:super@localhost:5432/test_soa",
-		ServerPort:      3000,
+		// TODO tourist
+		PostgresAddress: "postgres://postgres:super@localhost:5432/encounters",
+		// TODO 3030
+		ServerPort: 3030,
 	}
 
 	if postgresAddr, exists := os.LookupEnv("POSTGRES_ADDR"); exists {
