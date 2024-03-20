@@ -174,13 +174,13 @@ func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http
 		return
 	}
 
-	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	touristLongitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
 		return
 	}
 
-	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	touristLatitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLatitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
 		return
@@ -210,19 +210,19 @@ func (e *EncounterExecutionHandler) GetByTour(resp http.ResponseWriter, req *htt
 		return
 	}
 
-	touristLongitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLongitude")
+	touristLongitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLongitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist longitude"), http.StatusBadRequest)
 		return
 	}
 
-	touristLatitude, err := e.HttpUtils.GetDoubleFromForm(req, "touristLatitude")
+	touristLatitude, err := e.HttpUtils.GetDoubleFromQuery(req, "touristLatitude")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, fmt.Errorf("invalid tourist latitude"), http.StatusBadRequest)
 		return
 	}
 
-	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromQuery(req, "encounterIds")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -244,7 +244,7 @@ func (e *EncounterExecutionHandler) GetActiveByTour(resp http.ResponseWriter, re
 		return
 	}
 
-	encounterIDs, err := e.HttpUtils.GetUint64SliceFromForm(req, "encounterIds")
+	encounterIDs, err := e.HttpUtils.GetUint64SliceFromQuery(req, "encounterIds")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
