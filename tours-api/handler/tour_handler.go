@@ -74,7 +74,7 @@ func (e *TourHandler) Update(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	e.HttpUtils.WriteResponse(resp, http.StatusOK, "Tour updated successfully")
+	e.HttpUtils.WriteJSONResponse(resp, http.StatusCreated, updatedTour)
 }
 
 func (e *TourHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
