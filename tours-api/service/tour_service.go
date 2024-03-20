@@ -7,8 +7,9 @@ import (
 )
 
 type TourService struct {
-	TourRepository      *repository.TourRepository
-	EquipmentRepository *repository.EquipmentRepository
+	TourRepository       *repository.TourRepository
+	EquipmentRepository  *repository.EquipmentRepository
+	TourRatingRepository *repository.TourRatingRepository
 }
 
 func (service *TourService) Create(tour model.Tour) (uint64, error) {
@@ -73,4 +74,85 @@ func (service *TourService) GetToursByAuthor(authorID uint64) ([]model.Tour, err
 		return nil, err
 	}
 	return tours, nil
+}
+
+func (service *TourService) GetPublishedTours() ([]model.TourPreview, error) {
+	tours, err := service.TourRepository.GetPublishedTours()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tours: %w", err)
+	}
+
+	var tourPreviews []model.TourPreview
+	for _, tour := range tours {
+		tourPreview := model.TourPreview{
+			ID:                tour.ID,
+			AuthorID:          tour.AuthorID,
+			Name:              tour.Name,
+			Description:       tour.Description,
+			DemandignessLevel: tour.DemandignessLevel,
+			Price:             tour.Price,
+			Tags:              tour.Tags,
+			Equipment:         tour.Equipment,
+		}
+
+		if len(tour.Checkpoints) > 0 {
+			tourPreview.Checkpoint = tour.Checkpoints[0]
+		}
+
+		tourPreview.TourRatings, err = service.TourRatingRepository.FindByTourID(tour.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all tourRatings: %w", err)
+		}
+		tourPreviews = append(tourPreviews, tourPreview)
+	}
+
+	return tourPreviews, nil
+}
+
+func (service *TourService) GetPublishedTour(id uint64) (*model.TourPreview, error) {
+	tour, err := service.TourRepository.FindByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tour: %w", err)
+	}
+
+	tourPreview := model.TourPreview{
+		ID:                tour.ID,
+		AuthorID:          tour.AuthorID,
+		Name:              tour.Name,
+		Description:       tour.Description,
+		DemandignessLevel: tour.DemandignessLevel,
+		Price:             tour.Price,
+		Tags:              tour.Tags,
+		Equipment:         tour.Equipment,
+	}
+
+	if len(tour.Checkpoints) > 0 {
+		tourPreview.Checkpoint = tour.Checkpoints[0]
+	}
+
+	tourPreview.TourRatings, err = service.TourRatingRepository.FindByTourID(tour.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all tourRatings: %w", err)
+	}
+
+	return &tourPreview, nil
+}
+
+func (service *TourService) GetAverageRating(id uint64) (float32, error) {
+	tour, err := service.GetPublishedTour(id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get tour: %w", err)
+	}
+
+	if len(tour.TourRatings) == 0 {
+		return 0, nil
+	}
+
+	var totalRating uint64
+	for _, rating := range tour.TourRatings {
+		totalRating += rating.Rating
+	}
+
+	average := float32(totalRating) / float32(len(tour.TourRatings))
+	return average, nil
 }

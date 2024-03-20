@@ -30,6 +30,9 @@ func (a *App) loadRoutes() {
 	tourExecutionRouter := router.PathPrefix("/tour-executions").Subrouter()
 	a.loadTourExecutionRoutes(tourExecutionRouter)
 
+	publishedToursRouter := router.PathPrefix("/published-tours").Subrouter()
+	a.loadPublishedToursRoutes(publishedToursRouter)
+
 	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
 
 	a.router = router
@@ -137,6 +140,25 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/{userID}/{executionID}", tourExecutionHandler.Abandon).Methods("PUT")
 	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.Create).Methods("POST")
 	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.GetByIDs).Methods("GET")
+}
+
+func (a *App) loadPublishedToursRoutes(router *mux.Router) {
+	tourService := &service.TourService{
+		TourRepository: &repository.TourRepository{
+			DB: a.db,
+		},
+		TourRatingRepository: &repository.TourRatingRepository{
+			DB: a.db,
+		},
+	}
+
+	publishedToursHandler := &handler.PublishedToursHandler{
+		TourService: tourService,
+	}
+
+	router.HandleFunc("", publishedToursHandler.GetPublishedTours).Methods("GET")
+	router.HandleFunc("/{id}", publishedToursHandler.GetPublishedTour).Methods("GET")
+	router.HandleFunc("/{id}/rating", publishedToursHandler.GetAverageRating).Methods("GET")
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {

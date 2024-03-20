@@ -73,3 +73,22 @@ func (repo *TourRatingRepository) FindByID(id uint64) (*model.TourRating, error)
 	}
 	return &tourRating, nil
 }
+
+func (repo *TourRatingRepository) ExistsByIDs(userId uint64, tourId uint64) (bool, error) {
+	var count int64
+	if err := repo.DB.Model(&model.TourRating{}).Where("tour_id = ? AND tourist_id = ?", tourId, userId).Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (repo *TourRatingRepository) FindByTourID(id uint64) ([]model.TourRating, error) {
+	var tourRatings []model.TourRating
+	if err := repo.DB.Where("tour_id = ?", id).Find(&tourRatings).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return tourRatings, nil
+}

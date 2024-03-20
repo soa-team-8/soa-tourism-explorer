@@ -105,3 +105,18 @@ func (repo *TourRepository) FindByAuthorID(authorID uint64) ([]model.Tour, error
 	}
 	return tours, nil
 }
+
+func (repo *TourRepository) GetPublishedTours() ([]model.Tour, error) {
+	var tours []model.Tour
+
+	if err := repo.DB.
+		Preload("Equipment").
+		Preload("Checkpoints").
+		Where("status = ?", model.Published).
+		Find(&tours).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return tours, nil
+}

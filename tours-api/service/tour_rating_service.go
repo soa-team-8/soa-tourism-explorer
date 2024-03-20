@@ -18,7 +18,15 @@ func (service *TourRatingService) Create(tourRating model.TourRating) (uint64, e
 		return 0, fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
 
-	tourExecution, err := service.TourExecutionRepository.FindInProgressByIds(tourRating.TouristID, tourRating.TourID)
+	isRated, err := service.TourRatingRepository.ExistsByIDs(tourRating.TouristID, tourRating.TourID)
+	if err != nil {
+		return 0, nil
+	}
+	if isRated {
+		return 0, fmt.Errorf("you already rated this tour")
+	}
+
+	tourExecution, err := service.TourExecutionRepository.FindByIds(tourRating.TouristID, tourRating.TourID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get tourExecution: %w", err)
 	}
@@ -56,7 +64,7 @@ func (service *TourRatingService) Update(tourRating model.TourRating) error {
 		return fmt.Errorf("failed to update: rating can not be %d", tourRating.Rating)
 	}
 
-	tourExecution, err := service.TourExecutionRepository.FindInProgressByIds(tourRating.TouristID, tourRating.TourID)
+	tourExecution, err := service.TourExecutionRepository.FindByIds(tourRating.TouristID, tourRating.TourID)
 	if err != nil {
 		return fmt.Errorf("failed to get tourExecution: %w", err)
 	}
