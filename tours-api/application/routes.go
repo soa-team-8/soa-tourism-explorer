@@ -30,8 +30,11 @@ func (a *App) loadRoutes() {
 	tourExecutionRouter := router.PathPrefix("/tour-executions").Subrouter()
 	a.loadTourExecutionRoutes(tourExecutionRouter)
 
-	publishedToursRouter := router.PathPrefix("/published-tours").Subrouter()
-	a.loadPublishedToursRoutes(publishedToursRouter)
+	publishedTourRouter := router.PathPrefix("/published-tours").Subrouter()
+	a.loadPublishedToursRoutes(publishedTourRouter)
+
+	reportedIssueRouter := router.PathPrefix("/reported-issues").Subrouter()
+	a.loadReportedIssuesRoutes(reportedIssueRouter)
 
 	router.HandleFunc("/images/{imageName}", a.serveImage).Methods("GET")
 
@@ -142,6 +145,32 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 	router.HandleFunc("/{userID}/{executionID}", tourExecutionHandler.Abandon).Methods("PUT")
 	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.Create).Methods("POST")
 	router.HandleFunc("/{userID}/{tourID}", tourExecutionHandler.GetByIDs).Methods("GET")
+}
+
+func (a *App) loadReportedIssuesRoutes(router *mux.Router) {
+	reportedIssueService := &service.ReportedIssueService{
+		ReportedIssueRepository: &repository.ReportedIssueRepository{
+			DB: a.db,
+		},
+		TourRepository: &repository.TourRepository{
+			DB: a.db,
+		},
+	}
+
+	reportedIssueHandler := &handler.ReportedIssueHandler{
+		ReportedIssueService: reportedIssueService,
+	}
+
+	router.HandleFunc("", reportedIssueHandler.GetAll).Methods("GET")
+	router.HandleFunc("/{id}/author", reportedIssueHandler.GetAllByAuthor).Methods("GET")
+	router.HandleFunc("/{id}/tourist", reportedIssueHandler.GetAllByTourist).Methods("GET")
+	router.HandleFunc("/{cat}/{desc}/{prior}/{tourID}/{userID}", reportedIssueHandler.Create).Methods("POST")
+	router.HandleFunc("/{id}/comment", reportedIssueHandler.AddComment).Methods("POST")
+	router.HandleFunc("/{id}/deadline", reportedIssueHandler.AddDeadline).Methods("PUT")
+	router.HandleFunc("/{id}/penalize", reportedIssueHandler.PenalizeAuthor).Methods("PUT")
+	router.HandleFunc("/{id}/close", reportedIssueHandler.Close).Methods("PUT")
+	router.HandleFunc("/{id}/resolve", reportedIssueHandler.Resolve).Methods("PUT")
+
 }
 
 func (a *App) loadPublishedToursRoutes(router *mux.Router) {

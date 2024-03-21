@@ -83,6 +83,23 @@ func (service *TourExecutionService) CheckPosition(touristPosition model.Tourist
 		return tourExecution, nil
 	}
 
+	err = service.updateCheckpoints(tourExecution, touristPosition)
+	if err != nil {
+		return tourExecution, err
+	}
+
+	if len(tourExecution.CompletedCheckpoints) == len(tourExecution.Tour.Checkpoints) {
+		tourExecution.ExecutionStatus = model.Completed
+	}
+	tourExecution.LastActivity = time.Now()
+	err = service.TourExecutionRepository.Update(*tourExecution)
+	if err != nil {
+		return tourExecution, fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
+	}
+	return tourExecution, nil
+}
+
+func (service *TourExecutionService) updateCheckpoints(tourExecution *model.TourExecution, touristPosition model.TouristPosition) error {
 	index := 0
 	for _, checkpoint := range tourExecution.Tour.Checkpoints {
 		a := math.Abs(math.Round(checkpoint.Longitude*10000)/10000 - math.Round(touristPosition.Longitude*10000)/10000)
@@ -107,22 +124,13 @@ func (service *TourExecutionService) CheckPosition(touristPosition model.Tourist
 
 			if !completionExists {
 				tourExecution.CompletedCheckpoints = append(tourExecution.CompletedCheckpoints, completion)
-				err = service.TourExecutionRepository.Update(*tourExecution)
+				err := service.TourExecutionRepository.Update(*tourExecution)
 				if err != nil {
-					return tourExecution, fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
+					return fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
 				}
 			}
 		}
 		index++
 	}
-
-	if len(tourExecution.CompletedCheckpoints) == len(tourExecution.Tour.Checkpoints) {
-		tourExecution.ExecutionStatus = model.Completed
-	}
-	tourExecution.LastActivity = time.Now()
-	err = service.TourExecutionRepository.Update(*tourExecution)
-	if err != nil {
-		return tourExecution, fmt.Errorf("failed to update tourExecution with ID %d: %w", tourExecution.ID, err)
-	}
-	return tourExecution, nil
+	return nil
 }
