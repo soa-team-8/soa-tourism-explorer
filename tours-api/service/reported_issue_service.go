@@ -20,6 +20,7 @@ func (service *ReportedIssueService) Create(category string, description string,
 		Description: description,
 		Priority:    priority,
 		Time:        time.Now(),
+		Deadline:    nil,
 		Closed:      false,
 		Resolved:    false,
 	}
@@ -87,7 +88,7 @@ func (service *ReportedIssueService) AddDeadline(id uint64, date time.Time) (*mo
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reportedIssue with ID %d: %w", id, err)
 	}
-	reportedIssue.Deadline = date
+	reportedIssue.Deadline = &date
 	err = service.ReportedIssueRepository.Update(*reportedIssue)
 	if err != nil {
 		return &model.ReportedIssue{}, fmt.Errorf("failed to update reportedIssue: %w", err)

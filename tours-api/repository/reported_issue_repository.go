@@ -36,7 +36,7 @@ func (repo *ReportedIssueRepository) Update(reportedIssue model.ReportedIssue) e
 
 func (repo *ReportedIssueRepository) FindByID(id uint64) (*model.ReportedIssue, error) {
 	var reportedIssue model.ReportedIssue
-	if err := repo.DB.Preload("Tour").First(&reportedIssue, id).Error; err != nil {
+	if err := repo.DB.Preload("Comments").Preload("Tour").First(&reportedIssue, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -47,7 +47,7 @@ func (repo *ReportedIssueRepository) FindByID(id uint64) (*model.ReportedIssue, 
 
 func (repo *ReportedIssueRepository) FindAll() ([]model.ReportedIssue, error) {
 	var reportedIssues []model.ReportedIssue
-	if err := repo.DB.Preload("Tour").Find(&reportedIssues).Error; err != nil {
+	if err := repo.DB.Preload("Comments").Preload("Tour").Find(&reportedIssues).Error; err != nil {
 		return nil, err
 	}
 	return reportedIssues, nil
@@ -55,8 +55,12 @@ func (repo *ReportedIssueRepository) FindAll() ([]model.ReportedIssue, error) {
 
 func (repo *ReportedIssueRepository) FindByAuthorId(authorId uint64) ([]model.ReportedIssue, error) {
 	var reportedIssues []model.ReportedIssue
-	if err := repo.DB.Preload("Tour").Where("tour.author_id = ?", authorId).Find(&reportedIssues).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { //author id proveri
+	if err := repo.DB.
+		Preload("Comments").Preload("Tour").
+		Joins("JOIN tours ON tours.id = reported_issues.tour_id").
+		Where("tours.author_id = ?", authorId).
+		Find(&reportedIssues).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -66,7 +70,7 @@ func (repo *ReportedIssueRepository) FindByAuthorId(authorId uint64) ([]model.Re
 
 func (repo *ReportedIssueRepository) FindByTouristId(touristId uint64) ([]model.ReportedIssue, error) {
 	var reportedIssues []model.ReportedIssue
-	if err := repo.DB.Preload("Tour").Where("tourist_id = ?", touristId).Find(&reportedIssues).Error; err != nil {
+	if err := repo.DB.Preload("Comments").Preload("Tour").Where("tourist_id = ?", touristId).Find(&reportedIssues).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
