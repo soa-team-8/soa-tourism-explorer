@@ -372,7 +372,7 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID 
 				newXP += XP
 			}
 		}
-		_, XP, err := service.Complete(executionID, touristID, touristLatitude, touristLongitude)
+		_, XP, err := service.Complete(executionID, touristID, touristLongitude, touristLatitude)
 		if err != nil {
 			return nil, 0, fmt.Errorf("error completing execution: %v", err)
 		}
