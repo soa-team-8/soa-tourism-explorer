@@ -1,0 +1,76 @@
+version: "3.7"
+
+services:
+  tours-api:
+    build:
+      context: ./tours-api
+      dockerfile: Dockerfile
+    image: tours-api
+    container_name: tours_api_container
+    restart: always
+    networks:
+      - services_network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - tours_database
+    environment:
+      POSTGRES_ADDR: "postgres://postgres:root@tours_database:5432/tours"
+      SERVER_PORT: 3000
+
+  encounters-api:
+    build:
+      context: ./encounters-api
+      dockerfile: Dockerfile
+    image: encounters-api
+    container_name: encounters_api_container
+    restart: always
+    networks:
+      - services_network
+    ports:
+      - "3030:3030"
+    depends_on:
+      - encounters_database
+    environment:
+      POSTGRES_ADDR: "postgres://postgres:root@encounters_database:5432/encounters"
+      SERVER_PORT: 3030
+
+  tours_database:
+    image: postgres
+    container_name: tours_db_container
+    restart: always
+    networks:
+      - services_network
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: tours
+    volumes:
+      - tours_database_data:/var/lib/postgresql/data
+
+  encounters_database:
+    image: postgres
+    container_name: encounters_db_container
+    restart: always
+    networks:
+      - services_network
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: encounters
+    volumes:
+      - encounters_database_data:/var/lib/postgresql/data
+
+volumes:
+  tours_database_data:
+    name: tours_database_volume
+
+  encounters_database_data:
+    name: encounters_database_volume
+
+networks:
+  services_network:
+    name: services_network
+    driver: bridge
