@@ -12,7 +12,7 @@ type Config struct {
 
 func LoadConfig() Config {
 	config := Config{
-		PostgresAddress: "postgres://postgres:super@localhost:5432/tours",
+		PostgresAddress: "postgres://postgres:super@tours_database:5432/tours",
 		ServerPort:      3000,
 	}
 

@@ -13,7 +13,7 @@ type Config struct {
 func LoadConfig() Config {
 	cfg := Config{
 		// TODO tourist
-		PostgresAddress: "postgres://postgres:super@localhost:5432/encounters",
+		PostgresAddress: "postgres://postgres:super@encounters_database:5432/encounters",
 		// TODO 3030
 		ServerPort: 3030,
 	}
