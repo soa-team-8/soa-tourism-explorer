@@ -1,6 +1,5 @@
 package model
 
-// RequestStatus je enumeracija za status zahteva
 type RequestStatus int
 
 const (
@@ -9,7 +8,6 @@ const (
 	Rejected
 )
 
-// EncounterRequest je struktura koja predstavlja zahtev za susret
 type EncounterRequest struct {
 	ID          uint64        `json:"id" gorm:"primaryKey;autoIncrement"`
 	EncounterId uint64        `json:"encounterId"`
@@ -17,12 +15,10 @@ type EncounterRequest struct {
 	Status      RequestStatus `json:"status"`
 }
 
-// AcceptRequest postavlja status zahteva na Accepted
-func (er *EncounterRequest) AcceptRequest() {
+func (er *EncounterRequest) Accept() {
 	er.Status = Accepted
 }
 
-// RejectRequest postavlja status zahteva na Rejected
-func (er *EncounterRequest) RejectRequest() {
+func (er *EncounterRequest) Reject() {
 	er.Status = Rejected
 }

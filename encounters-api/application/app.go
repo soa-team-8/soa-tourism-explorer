@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"net/http"
 
 	"time"
@@ -11,61 +12,105 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type App struct {
-	router http.Handler
-	db     *gorm.DB
-	config Config
+	router      http.Handler
+	postgresDB  *gorm.DB
+	mongoClient *mongo.Client
+	config      Config
 }
 
 func New(config Config) *App {
-	connectionURL := config.PostgresAddress
-	db, err := gorm.Open(postgres.Open(connectionURL), &gorm.Config{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	// Perform migrations
-	err = db.AutoMigrate(&model.Encounter{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	err = db.AutoMigrate(&model.SocialEncounter{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	err = db.AutoMigrate(&model.HiddenLocationEncounter{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	err = db.AutoMigrate(&model.EncounterRequest{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	err = db.AutoMigrate(&model.EncounterExecution{})
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
 	app := &App{
-		db:     db,
 		config: config,
+	}
+
+	if err := app.setupPostgres(); err != nil {
+		fmt.Println("Failed to setup PostgreSQL:", err)
+		return nil
+	}
+
+	if err := app.setupMongoDB(); err != nil {
+		fmt.Println("Failed to setup MongoDB:", err)
+		return nil
 	}
 
 	app.loadRoutes()
 
 	return app
+}
+
+func (a *App) setupPostgres() error {
+	postgresConnectionURL := a.config.PostgresAddress
+	db, err := gorm.Open(postgres.Open(postgresConnectionURL), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+
+	if err := performMigrations(db); err != nil {
+		return err
+	}
+
+	a.postgresDB = db
+	return nil
+}
+
+func (a *App) setupMongoDB() error {
+	mongoURI := a.config.MongoDBAddress
+	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = mongoClient.Connect(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := createEncountersDatabase(ctx, mongoClient); err != nil {
+		return err
+	}
+
+	a.mongoClient = mongoClient
+	return nil
+}
+
+func performMigrations(db *gorm.DB) error {
+	if err := db.AutoMigrate(&model.Encounter{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&model.SocialEncounter{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&model.HiddenLocationEncounter{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&model.EncounterRequest{}); err != nil {
+		return err
+	}
+
+	if err := db.AutoMigrate(&model.EncounterExecution{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createEncountersDatabase(ctx context.Context, client *mongo.Client) error {
+	err := client.Database("encounters").CreateCollection(ctx, "encounterExecutions")
+	err = client.Database("encounters").CreateCollection(ctx, "encounterRequests")
+	err = client.Database("encounters").CreateCollection(ctx, "encounters")
+	err = client.Database("encounters").CreateCollection(ctx, "hiddenLocationEncounters")
+	err = client.Database("encounters").CreateCollection(ctx, "socialEncounters")
+	return err
 }
 
 func (a *App) Start(ctx context.Context) error {

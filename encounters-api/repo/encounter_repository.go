@@ -12,7 +12,7 @@ type EncounterRepository struct {
 	DB *gorm.DB
 }
 
-func NewEncounterRepository(db *gorm.DB) *EncounterRepository {
+func New(db *gorm.DB) *EncounterRepository {
 	return &EncounterRepository{DB: db}
 }
 
@@ -65,17 +65,17 @@ func (r *EncounterRepository) Update(encounter model.Encounter) (model.Encounter
 	return encounter, nil
 }
 
-func (r *EncounterRepository) MakeEncounterPublished(id uint64) (*model.Encounter, error) {
+func (r *EncounterRepository) Publish(id uint64) (*model.Encounter, error) {
 	encounterToUpdate := &model.Encounter{}
 	err := r.DB.First(encounterToUpdate, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("Not found %d", id)
+			return nil, fmt.Errorf("not found %d", id)
 		}
 		return nil, err
 	}
 
-	encounterToUpdate.MakeEncounterPublished()
+	encounterToUpdate.Publish()
 	err = r.DB.Save(encounterToUpdate).Error
 	if err != nil {
 		return nil, err

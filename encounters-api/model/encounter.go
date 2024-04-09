@@ -28,10 +28,9 @@ type Encounter struct {
 	Type        EncounterType   `json:"type"`
 	Longitude   float64         `json:"longitude"`
 	Latitude    float64         `json:"latitude"`
-	// List of changes
 }
 
-func (e *Encounter) MakeEncounterPublished() {
+func (e *Encounter) Publish() {
 	e.Status = Published
 }
 

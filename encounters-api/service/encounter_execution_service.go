@@ -18,7 +18,7 @@ type EncounterExecutionService struct {
 func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	return &EncounterExecutionService{
 		ExecutionRepo:         repo.NewEncounterExecutionRepository(db),
-		EncounterRepo:         repo.NewEncounterRepository(db),
+		EncounterRepo:         repo.New(db),
 		SocialEncounterRepo:   repo.NewSocialEncounterRepository(db),
 		LocationEncounterRepo: repo.NewHiddenLocationRepository(db),
 	}

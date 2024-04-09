@@ -2,6 +2,8 @@ package application
 
 import (
 	"encounters/handler"
+	"encounters/repo"
+	"encounters/repo/mongoDB"
 	"encounters/service"
 
 	"fmt"
@@ -38,7 +40,7 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterService := service.NewEncounterService(a.db)
+	encounterService := service.NewEncounterService(a.postgresDB)
 	encounterHandler := handler.NewEncounterHandler(encounterService)
 
 	router.HandleFunc("", encounterHandler.Create).Methods("POST")
@@ -51,7 +53,9 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 }
 
 func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
-	encounterRequestService := service.NewEncounterRequestService(a.db)
+	encounterRequestRepository := mongoDB.New(a.mongoClient)
+	encounterRepository := repo.New(a.postgresDB)
+	encounterRequestService := service.NewEncounterRequestService(encounterRequestRepository, *encounterRepository)
 	encounterRequestHandler := handler.NewEncounterRequestHandler(encounterRequestService)
 
 	router.HandleFunc("/create", encounterRequestHandler.CreateRequest).Methods("POST")
@@ -64,8 +68,8 @@ func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
 }
 
 func (a *App) loadExecutionRoutes(router *mux.Router) {
-	executionService := service.NewEncounterExecutionService(a.db)
-	encounterService := service.NewEncounterService(a.db)
+	executionService := service.NewEncounterExecutionService(a.postgresDB)
+	encounterService := service.NewEncounterService(a.postgresDB)
 	executionHandler := handler.NewEncounterExecutionHandler(executionService, encounterService)
 
 	router.HandleFunc("/{touristId}", executionHandler.Create).Methods("POST")
@@ -89,7 +93,7 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 }
 
 func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
-	socialEncounterService := service.NewSocialEncounterService(a.db)
+	socialEncounterService := service.NewSocialEncounterService(a.postgresDB)
 	socialEncounterHandler := handler.NewSocialEncounterHandler(socialEncounterService)
 
 	router.HandleFunc("", socialEncounterHandler.Create).Methods("POST")
@@ -100,7 +104,7 @@ func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
 }
 
 func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
-	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.db)
+	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.postgresDB)
 	hiddenLocationEncounterHandler := handler.NewHiddenLocationEncounterHandler(hiddenLocationEncounterService)
 
 	router.HandleFunc("", hiddenLocationEncounterHandler.Create).Methods("POST")

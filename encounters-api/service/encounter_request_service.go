@@ -4,27 +4,20 @@ import (
 	"encounters/dto"
 	"encounters/repo"
 	"fmt"
-	"gorm.io/gorm"
 )
 
-// EncounterRequestService je servis za rad sa zahtevima za susrete
 type EncounterRequestService struct {
-	EncounterRequestRepo *repo.EncounterRequestRepository
-	EncounterRepo        *repo.EncounterRepository
+	EncounterRequestRepo repo.EncounterRequestRepository
+	EncounterRepo        repo.EncounterRepository
 }
 
-func NewEncounterRequestService(db *gorm.DB) *EncounterRequestService {
+func NewEncounterRequestService(encounterRequestRepo repo.EncounterRequestRepository, encounterRepo repo.EncounterRepository) *EncounterRequestService {
 	return &EncounterRequestService{
-		EncounterRequestRepo: &repo.EncounterRequestRepository{
-			DB: db,
-		},
-		EncounterRepo: &repo.EncounterRepository{
-			DB: db,
-		},
+		EncounterRequestRepo: encounterRequestRepo,
+		EncounterRepo:        encounterRepo,
 	}
 }
 
-// CreateEncounterRequest kreira novi zahtev za susret
 func (service *EncounterRequestService) CreateEncounterRequest(encounterReqDto dto.EncounterRequestDto) (dto.EncounterRequestDto, error) {
 	encounterReq := encounterReqDto.ToReqModel()
 	newRequest, err := service.EncounterRequestRepo.Save(encounterReq)
@@ -46,40 +39,68 @@ func (service *EncounterRequestService) GetAll() ([]dto.EncounterRequestDto, err
 	return encounterRequestsDtos, nil
 }
 
-// AcceptEncounterRequest prihvata zahtev za susret sa datim ID-om
-func (service *EncounterRequestService) AcceptEncounterRequest(id int) (dto.EncounterRequestDto, error) {
-	acceptedRequest, err := service.EncounterRequestRepo.AcceptRequest(id)
+func (service *EncounterRequestService) Accept(id int) (dto.EncounterRequestDto, error) {
+	request, err := service.EncounterRequestRepo.FindByID(id)
 	if err != nil {
-		return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be accepted: %v", err)
+		return dto.EncounterRequestDto{}, fmt.Errorf("request with ID %d not found", id)
 	}
 
-	encounterToPublish, err := service.EncounterRepo.FindByID(acceptedRequest.EncounterId)
+	request.Accept()
+
+	updatedRequest, err := service.EncounterRequestRepo.Update(*request)
+
+	if err != nil {
+		return dto.EncounterRequestDto{}, fmt.Errorf("request cannot be updated: %v", err)
+	}
+
+	/*
+		acceptedRequest, err := service.EncounterRequestRepo.Accept(id)
+		if err != nil {
+			return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be accepted: %v", err)
+		}
+	*/
+
+	encounterToPublish, err := service.EncounterRepo.FindByID(updatedRequest.EncounterId)
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter not found: %v", err)
 	}
 
-	_, err = service.EncounterRepo.MakeEncounterPublished(encounterToPublish.ID)
+	_, err = service.EncounterRepo.Publish(encounterToPublish.ID)
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter cannot be published: %v", err)
 	}
 
-	acceptedRequestDto := dto.ToDtoReq(*acceptedRequest)
+	acceptedRequestDto := dto.ToDtoReq(*updatedRequest)
 	return acceptedRequestDto, nil
 }
 
-// RejectEncounterRequest odbija zahtev za susret sa datim ID-om
-func (service *EncounterRequestService) RejectEncounterRequest(id int) (dto.EncounterRequestDto, error) {
-	rejectedRequest, err := service.EncounterRequestRepo.RejectRequest(id)
+func (service *EncounterRequestService) Reject(id int) (dto.EncounterRequestDto, error) {
+
+	request, err := service.EncounterRequestRepo.FindByID(id)
 	if err != nil {
-		return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be rejected: %v", err)
+		return dto.EncounterRequestDto{}, fmt.Errorf("request with ID %d not found", id)
 	}
 
-	rejectedRequestDto := dto.ToDtoReq(*rejectedRequest)
+	request.Reject()
+
+	updatedRequest, err := service.EncounterRequestRepo.Update(*request)
+
+	if err != nil {
+		return dto.EncounterRequestDto{}, fmt.Errorf("request cannot be updated: %v", err)
+	}
+
+	/*
+		rejectedRequest, err := service.EncounterRequestRepo.Reject(id)
+		if err != nil {
+			return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be rejected: %v", err)
+		}
+	*/
+
+	rejectedRequestDto := dto.ToDtoReq(*updatedRequest)
 	return rejectedRequestDto, nil
 }
 
-// GetEncounterRequestByID pronalazi zahtev za susret sa datim ID-om
-func (service *EncounterRequestService) GetEncounterRequestByID(id int) (dto.EncounterRequestDto, error) {
+func (service *EncounterRequestService) GetByID(id int) (dto.EncounterRequestDto, error) {
 	encounterRequest, err := service.EncounterRequestRepo.FindByID(id)
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter request not found: %v", err)
@@ -89,8 +110,7 @@ func (service *EncounterRequestService) GetEncounterRequestByID(id int) (dto.Enc
 	return encounterRequestDto, nil
 }
 
-// UpdateEncounterRequest ažurira postojeći zahtev za susret
-func (service *EncounterRequestService) UpdateEncounterRequest(encounterReqDto dto.EncounterRequestDto) (dto.EncounterRequestDto, error) {
+func (service *EncounterRequestService) Update(encounterReqDto dto.EncounterRequestDto) (dto.EncounterRequestDto, error) {
 	encounterReq := encounterReqDto.ToReqModel()
 	updatedRequest, err := service.EncounterRequestRepo.Update(encounterReq)
 	if err != nil {
@@ -101,8 +121,7 @@ func (service *EncounterRequestService) UpdateEncounterRequest(encounterReqDto d
 	return updatedRequestDto, nil
 }
 
-// DeleteEncounterRequestByID briše zahtev za susret sa datim ID-om
-func (service *EncounterRequestService) DeleteEncounterRequestByID(id int) error {
+func (service *EncounterRequestService) DeleteByID(id int) error {
 	err := service.EncounterRequestRepo.DeleteByID(id)
 	if err != nil {
 		return fmt.Errorf("encounter request cannot be deleted: %v", err)

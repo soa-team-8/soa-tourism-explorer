@@ -4,6 +4,7 @@ import (
 	"encounters/dto"
 	"encounters/model"
 	"encounters/repo"
+	"encounters/repo/postgreSQL"
 	"fmt"
 	"gorm.io/gorm"
 )
@@ -11,7 +12,7 @@ import (
 type EncounterService struct {
 	EncounterRepo           *repo.EncounterRepository
 	EncounterRequestService *EncounterRequestService
-	EncounterRequestRepo    *repo.EncounterRequestRepository
+	EncounterRequestRepo    *postgreSQL.EncounterRequestRepository
 	SocialEncounterRepo     *repo.SocialEncounterRepository
 	HiddenEncounterRepo     *repo.HiddenLocationRepository
 }
@@ -21,7 +22,7 @@ func NewEncounterService(db *gorm.DB) *EncounterService {
 		EncounterRepo: &repo.EncounterRepository{
 			DB: db,
 		},
-		EncounterRequestRepo: &repo.EncounterRequestRepository{
+		EncounterRequestRepo: &postgreSQL.EncounterRequestRepository{
 			DB: db,
 		},
 		SocialEncounterRepo: &repo.SocialEncounterRepository{

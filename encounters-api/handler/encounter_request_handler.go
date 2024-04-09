@@ -19,7 +19,7 @@ func NewEncounterRequestHandler(executionRequestService *service.EncounterReques
 }
 
 func (e *EncounterRequestHandler) CreateRequest(resp http.ResponseWriter, req *http.Request) {
-	encounterReqDto, err := e.Decode(req.Body, &dto.EncounterDto{})
+	encounterReqDto, err := e.Decode(req.Body, &dto.EncounterRequestDto{})
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -57,7 +57,7 @@ func (e *EncounterRequestHandler) UpdateRequest(resp http.ResponseWriter, req *h
 		return
 	}
 
-	updatedEncounter, err := e.EncounterRequestService.UpdateEncounterRequest(*updatedEncounterRequestDto.(*dto.EncounterRequestDto))
+	updatedEncounter, err := e.EncounterRequestService.Update(*updatedEncounterRequestDto.(*dto.EncounterRequestDto))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
@@ -73,7 +73,7 @@ func (e *EncounterRequestHandler) DeleteRequest(resp http.ResponseWriter, req *h
 		return
 	}
 
-	err = e.EncounterRequestService.DeleteEncounterRequestByID(int(idReq))
+	err = e.EncounterRequestService.DeleteByID(int(idReq))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
@@ -89,7 +89,7 @@ func (e *EncounterRequestHandler) AcceptRequest(resp http.ResponseWriter, req *h
 		return
 	}
 
-	acceptedReq, err := e.EncounterRequestService.AcceptEncounterRequest(int(idReq))
+	acceptedReq, err := e.EncounterRequestService.Accept(int(idReq))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
@@ -105,7 +105,7 @@ func (e *EncounterRequestHandler) RejectRequest(resp http.ResponseWriter, req *h
 		return
 	}
 
-	rejectedReq, err := e.EncounterRequestService.RejectEncounterRequest(int(idReq))
+	rejectedReq, err := e.EncounterRequestService.Reject(int(idReq))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return

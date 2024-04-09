@@ -7,15 +7,15 @@ import (
 
 type Config struct {
 	PostgresAddress string
+	MongoDBAddress  string
 	ServerPort      uint16
 }
 
 func LoadConfig() Config {
 	cfg := Config{
-		// TODO tourist
-		PostgresAddress: "postgres://postgres:super@encounters_database:5432/encounters",
-		// TODO 3030
-		ServerPort: 3030,
+		PostgresAddress: "postgres://postgres:super@localhost:5432/encounters",
+		MongoDBAddress:  "mongodb://localhost:27017",
+		ServerPort:      3030,
 	}
 
 	if postgresAddr, exists := os.LookupEnv("POSTGRES_ADDR"); exists {
