@@ -24,7 +24,7 @@ func NewEncounterExecutionHandler(executionService *service.EncounterExecutionSe
 }
 
 func (e *EncounterExecutionHandler) Create(resp http.ResponseWriter, req *http.Request) {
-	touristId, err := e.GetIDFromRequest(req, "touristId")
+	touristId, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -56,7 +56,7 @@ func (e *EncounterExecutionHandler) GetAll(resp http.ResponseWriter, req *http.R
 }
 
 func (e *EncounterExecutionHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -72,13 +72,13 @@ func (e *EncounterExecutionHandler) GetByID(resp http.ResponseWriter, req *http.
 }
 
 func (e *EncounterExecutionHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristId, err := e.GetIDFromRequest(req, "touristId")
+	touristId, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -97,13 +97,13 @@ func (e *EncounterExecutionHandler) DeleteByID(resp http.ResponseWriter, req *ht
 }
 
 func (e *EncounterExecutionHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristId, err := e.GetIDFromRequest(req, "touristId")
+	touristId, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -127,13 +127,13 @@ func (e *EncounterExecutionHandler) UpdateByID(resp http.ResponseWriter, req *ht
 }
 
 func (e *EncounterExecutionHandler) Activate(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.GetIDFromRequest(req, "touristId")
+	touristID, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	executionID, err := e.GetIDFromRequest(req, "encounterId")
+	executionID, err := e.GetUInt64FromRequest(req, "encounterId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -162,13 +162,13 @@ func (e *EncounterExecutionHandler) Activate(resp http.ResponseWriter, req *http
 }
 
 func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	executionID, err := e.HttpUtils.GetIDFromRequest(req, "executionId")
+	executionID, err := e.HttpUtils.GetUInt64FromRequest(req, "executionId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -204,7 +204,7 @@ func (e *EncounterExecutionHandler) Complete(resp http.ResponseWriter, req *http
 }
 
 func (e *EncounterExecutionHandler) GetByTour(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -238,7 +238,7 @@ func (e *EncounterExecutionHandler) GetByTour(resp http.ResponseWriter, req *htt
 }
 
 func (e *EncounterExecutionHandler) GetActiveByTour(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -267,7 +267,7 @@ func (e *EncounterExecutionHandler) GetActiveByTour(resp http.ResponseWriter, re
 }
 
 func (e *EncounterExecutionHandler) GetAllByTourist(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.GetIDFromRequest(req, "touristId")
+	touristID, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -283,7 +283,7 @@ func (e *EncounterExecutionHandler) GetAllByTourist(resp http.ResponseWriter, re
 }
 
 func (e *EncounterExecutionHandler) GetAllCompletedByTourist(resp http.ResponseWriter, req *http.Request) {
-	touristID, err := e.GetIDFromRequest(req, "touristId")
+	touristID, err := e.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -299,19 +299,19 @@ func (e *EncounterExecutionHandler) GetAllCompletedByTourist(resp http.ResponseW
 }
 
 func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req *http.Request) {
-	encounterID, err := e.HttpUtils.GetIDFromRequest(req, "encounterId")
+	encounterID, err := e.HttpUtils.GetUInt64FromRequest(req, "encounterId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	tourID, err := e.HttpUtils.GetIDFromRequest(req, "tourId")
+	tourID, err := e.HttpUtils.GetUInt64FromRequest(req, "tourId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -362,19 +362,19 @@ func (e *EncounterExecutionHandler) CheckPosition(resp http.ResponseWriter, req 
 }
 
 func (e *EncounterExecutionHandler) CheckPositionLocationEncounter(resp http.ResponseWriter, req *http.Request) {
-	encounterID, err := e.HttpUtils.GetIDFromRequest(req, "encounterId")
+	encounterID, err := e.HttpUtils.GetUInt64FromRequest(req, "encounterId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	tourID, err := e.HttpUtils.GetIDFromRequest(req, "tourId")
+	tourID, err := e.HttpUtils.GetUInt64FromRequest(req, "tourId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	touristID, err := e.HttpUtils.GetIDFromRequest(req, "touristId")
+	touristID, err := e.HttpUtils.GetUInt64FromRequest(req, "touristId")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return

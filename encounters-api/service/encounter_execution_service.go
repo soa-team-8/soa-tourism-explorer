@@ -3,6 +3,7 @@ package service
 import (
 	"encounters/model"
 	"encounters/repo"
+	"encounters/repo/postgreSQL"
 	"fmt"
 	"gorm.io/gorm"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 type EncounterExecutionService struct {
 	ExecutionRepo         *repo.EncounterExecutionRepository
-	EncounterRepo         *repo.EncounterRepository
+	EncounterRepo         *postgreSQL.EncounterRepository
 	SocialEncounterRepo   *repo.SocialEncounterRepository
 	LocationEncounterRepo *repo.HiddenLocationRepository
 }
@@ -18,7 +19,7 @@ type EncounterExecutionService struct {
 func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	return &EncounterExecutionService{
 		ExecutionRepo:         repo.NewEncounterExecutionRepository(db),
-		EncounterRepo:         repo.New(db),
+		EncounterRepo:         postgreSQL.NewEncounterRepository(db),
 		SocialEncounterRepo:   repo.NewSocialEncounterRepository(db),
 		LocationEncounterRepo: repo.NewHiddenLocationRepository(db),
 	}
@@ -302,7 +303,7 @@ func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, tou
 
 
 		if closestEncounter == nil {
-			return model.EncounterExecution{}, errors.New("no close encounter found")
+			return model.EncounterExecution{}, errors.NewEncounterRepository("no close encounter found")
 		}
 	*/
 

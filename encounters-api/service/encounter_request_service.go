@@ -18,7 +18,7 @@ func NewEncounterRequestService(encounterRequestRepo repo.EncounterRequestReposi
 	}
 }
 
-func (service *EncounterRequestService) CreateEncounterRequest(encounterReqDto dto.EncounterRequestDto) (dto.EncounterRequestDto, error) {
+func (service *EncounterRequestService) Create(encounterReqDto dto.EncounterRequestDto) (dto.EncounterRequestDto, error) {
 	encounterReq := encounterReqDto.ToReqModel()
 	newRequest, err := service.EncounterRequestRepo.Save(encounterReq)
 	if err != nil {
@@ -53,19 +53,15 @@ func (service *EncounterRequestService) Accept(id int) (dto.EncounterRequestDto,
 		return dto.EncounterRequestDto{}, fmt.Errorf("request cannot be updated: %v", err)
 	}
 
-	/*
-		acceptedRequest, err := service.EncounterRequestRepo.Accept(id)
-		if err != nil {
-			return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be accepted: %v", err)
-		}
-	*/
-
 	encounterToPublish, err := service.EncounterRepo.FindByID(updatedRequest.EncounterId)
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter not found: %v", err)
 	}
 
-	_, err = service.EncounterRepo.Publish(encounterToPublish.ID)
+	encounterToPublish.Publish()
+
+	_, err = service.EncounterRepo.Update(*encounterToPublish)
+
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("encounter cannot be published: %v", err)
 	}
@@ -88,13 +84,6 @@ func (service *EncounterRequestService) Reject(id int) (dto.EncounterRequestDto,
 	if err != nil {
 		return dto.EncounterRequestDto{}, fmt.Errorf("request cannot be updated: %v", err)
 	}
-
-	/*
-		rejectedRequest, err := service.EncounterRequestRepo.Reject(id)
-		if err != nil {
-			return dto.EncounterRequestDto{}, fmt.Errorf("encounter request cannot be rejected: %v", err)
-		}
-	*/
 
 	rejectedRequestDto := dto.ToDtoReq(*updatedRequest)
 	return rejectedRequestDto, nil

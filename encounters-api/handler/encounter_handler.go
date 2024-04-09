@@ -1,15 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
 	"encounters/dto"
 	"encounters/model"
-	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"errors"
+	"mime/multipart"
+	"net/http"
 
 	"gorm.io/gorm"
 
@@ -55,7 +51,7 @@ func (e *EncounterHandler) GetAll(resp http.ResponseWriter, req *http.Request) {
 }
 
 func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -71,7 +67,7 @@ func (e *EncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) 
 }
 
 func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -95,7 +91,7 @@ func (e *EncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Reques
 }
 
 func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := e.GetIDFromRequest(req, "id")
+	id, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -113,52 +109,42 @@ func (e *EncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Reques
 	e.WriteResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
 
-func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req *http.Request) {
-	// Dobijanje vrednosti iz putanje pomoću gorilla/mux
-	vars := mux.Vars(req)
-	levelStr := vars["level"]
-	userIDStr := vars["userId"]
-
-	err := req.ParseMultipartForm(10 << 20)
+func (e *EncounterHandler) CreateByTourist(resp http.ResponseWriter, req *http.Request) {
+	level, err := e.HttpUtils.GetIntFromRequest(req, "level")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := e.HttpUtils.GetUInt64FromRequest(req, "userId")
 	if err != nil {
-		e.HandleError(resp, err, http.StatusBadRequest)
-		return
-	}
-
-	level, err := strconv.Atoi(levelStr)
-	if err != nil {
-		e.HandleError(resp, err, http.StatusBadRequest)
+		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
 	newEncounterDto := &dto.EncounterDto{}
-	// Ostatak koda ostaje nepromenjen
-	err = json.NewDecoder(strings.NewReader(req.FormValue("encounter"))).Decode(&newEncounterDto)
+	err = e.HttpUtils.GetObjectFromForm(req, "encounter", newEncounterDto)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	images := req.MultipartForm.File["pictures"]
-
-	imageService := service.NewImageService()
-	uploadedImageNames, err := imageService.UploadImages(images)
-	newEncounterDto.Image = uploadedImageNames
+	images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	err = e.uploadImages(resp, newEncounterDto, images)
+	if err != nil {
 		return
 	}
 
 	if newEncounterDto.ActiveTouristsIDs == nil {
 		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
 	}
-	savedEncounterDto, err := e.EncounterService.CreateTouristEncounter(*newEncounterDto, level, uint64(userID))
+
+	savedEncounterDto, err := e.EncounterService.CreateByTourist(*newEncounterDto, level, userID)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
@@ -167,41 +153,44 @@ func (e *EncounterHandler) CreateTouristEncounter(resp http.ResponseWriter, req 
 	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
 }
 
-func (e *EncounterHandler) CreateAuthorEncounter(resp http.ResponseWriter, req *http.Request) {
-	// Dobijanje vrednosti iz putanje pomoću gorilla/mux
-
-	err := req.ParseMultipartForm(10 << 20)
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
-		return
-	}
-
+func (e *EncounterHandler) CreateByAuthor(resp http.ResponseWriter, req *http.Request) {
 	newEncounterDto := &dto.EncounterDto{}
-	// Ostatak koda ostaje nepromenjen
-	err = json.NewDecoder(strings.NewReader(req.FormValue("encounter"))).Decode(&newEncounterDto)
+	err := e.HttpUtils.GetObjectFromForm(req, "encounter", newEncounterDto)
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	images := req.MultipartForm.File["pictures"]
-
-	imageService := service.NewImageService()
-	uploadedImageNames, err := imageService.UploadImages(images)
-	newEncounterDto.Image = uploadedImageNames
+	images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
 	if err != nil {
 		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return
+	}
+
+	err = e.uploadImages(resp, newEncounterDto, images)
+	if err != nil {
 		return
 	}
 
 	if newEncounterDto.ActiveTouristsIDs == nil {
 		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
 	}
-	savedEncounterDto, err := e.EncounterService.CreateAuthorEncounter(*newEncounterDto)
+	savedEncounterDto, err := e.EncounterService.CreateByAuthor(*newEncounterDto)
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
 	}
 
 	e.WriteJSONResponse(resp, http.StatusOK, savedEncounterDto)
+}
+
+func (e *EncounterHandler) uploadImages(resp http.ResponseWriter, newEncounterDto *dto.EncounterDto, images []*multipart.FileHeader) error {
+	imageService := service.NewImageService()
+	uploadedImageNames, err := imageService.UploadImages(images)
+	if err != nil {
+		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+		return err
+	}
+	newEncounterDto.Image = uploadedImageNames
+	return nil
 }

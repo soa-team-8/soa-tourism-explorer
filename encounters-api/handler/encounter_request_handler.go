@@ -25,7 +25,7 @@ func (e *EncounterRequestHandler) CreateRequest(resp http.ResponseWriter, req *h
 		return
 	}
 
-	createdReq, err := e.EncounterRequestService.CreateEncounterRequest(*encounterReqDto.(*dto.EncounterRequestDto))
+	createdReq, err := e.EncounterRequestService.Create(*encounterReqDto.(*dto.EncounterRequestDto))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusInternalServerError)
 		return
@@ -35,13 +35,13 @@ func (e *EncounterRequestHandler) CreateRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) GetRequestByID(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req, "id")
+	idReq, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
 
-	encounterRequest, err := e.EncounterRequestService.GetEncounterRequestByID(int(idReq))
+	encounterRequest, err := e.EncounterRequestService.GetByID(int(idReq))
 	if err != nil {
 		e.HandleError(resp, err, http.StatusNotFound)
 		return
@@ -67,7 +67,7 @@ func (e *EncounterRequestHandler) UpdateRequest(resp http.ResponseWriter, req *h
 }
 
 func (e *EncounterRequestHandler) DeleteRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req, "id")
+	idReq, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -82,8 +82,8 @@ func (e *EncounterRequestHandler) DeleteRequest(resp http.ResponseWriter, req *h
 	e.WriteResponse(resp, http.StatusOK, "Encounter deleted successfully")
 }
 
-func (e *EncounterRequestHandler) AcceptRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req, "id")
+func (e *EncounterRequestHandler) Accept(resp http.ResponseWriter, req *http.Request) {
+	idReq, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -98,8 +98,8 @@ func (e *EncounterRequestHandler) AcceptRequest(resp http.ResponseWriter, req *h
 	e.WriteJSONResponse(resp, http.StatusOK, acceptedReq)
 }
 
-func (e *EncounterRequestHandler) RejectRequest(resp http.ResponseWriter, req *http.Request) {
-	idReq, err := e.GetIDFromRequest(req, "id")
+func (e *EncounterRequestHandler) Reject(resp http.ResponseWriter, req *http.Request) {
+	idReq, err := e.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		e.HandleError(resp, err, http.StatusBadRequest)
 		return

@@ -4,33 +4,23 @@ import (
 	"encounters/dto"
 	"encounters/model"
 	"encounters/repo"
-	"encounters/repo/postgreSQL"
 	"fmt"
-	"gorm.io/gorm"
 )
 
 type EncounterService struct {
-	EncounterRepo           *repo.EncounterRepository
-	EncounterRequestService *EncounterRequestService
-	EncounterRequestRepo    *postgreSQL.EncounterRequestRepository
-	SocialEncounterRepo     *repo.SocialEncounterRepository
-	HiddenEncounterRepo     *repo.HiddenLocationRepository
+	EncounterRepo        repo.EncounterRepository
+	EncounterRequestRepo repo.EncounterRequestRepository
+	SocialEncounterRepo  *repo.SocialEncounterRepository
+	HiddenEncounterRepo  *repo.HiddenLocationRepository
 }
 
-func NewEncounterService(db *gorm.DB) *EncounterService {
+func NewEncounterService(encounterRepo repo.EncounterRepository, encounterRequestRepo repo.EncounterRequestRepository,
+	socialEncounterRepo *repo.SocialEncounterRepository, hiddenEncounterRepo *repo.HiddenLocationRepository) *EncounterService {
 	return &EncounterService{
-		EncounterRepo: &repo.EncounterRepository{
-			DB: db,
-		},
-		EncounterRequestRepo: &postgreSQL.EncounterRequestRepository{
-			DB: db,
-		},
-		SocialEncounterRepo: &repo.SocialEncounterRepository{
-			Db: db,
-		},
-		HiddenEncounterRepo: &repo.HiddenLocationRepository{
-			Db: db,
-		},
+		EncounterRequestRepo: encounterRequestRepo,
+		EncounterRepo:        encounterRepo,
+		SocialEncounterRepo:  socialEncounterRepo,
+		HiddenEncounterRepo:  hiddenEncounterRepo,
 	}
 }
 
@@ -88,13 +78,12 @@ func (service *EncounterService) Update(encounterDto dto.EncounterDto) (dto.Enco
 	return updatedEncounterDto, nil
 }
 
-func (service *EncounterService) CreateTouristEncounter(encounterDto dto.EncounterDto, level int, userId uint64) (dto.EncounterDto, error) {
+func (service *EncounterService) CreateByTourist(encounterDto dto.EncounterDto, level int, userId uint64) (dto.EncounterDto, error) {
 	var savedEncId uint64
 	if level >= 10 {
-		// logika za slučaj kada je level >= 10
 		if encounterDto.Type == "Location" {
-			var hiddenLocationEnconter = encounterDto.ToHiddenLocationModel()
-			savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEnconter)
+			var hiddenLocationEncounter = encounterDto.ToHiddenLocationModel()
+			savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEncounter)
 			savedEncId = savedEncounter.EncounterID
 			if err != nil {
 				return dto.EncounterDto{}, fmt.Errorf("hidden location encounter cannot be created: %v", err)
@@ -114,7 +103,7 @@ func (service *EncounterService) CreateTouristEncounter(encounterDto dto.Encount
 				return dto.EncounterDto{}, fmt.Errorf("encounter cannot be created: %v", err)
 			}
 		}
-
+		encounterDto.ID = savedEncId
 		encounterReqDto := dto.EncounterRequestDto{TouristId: userId, EncounterId: savedEncId, Status: "OnHold"}
 		_, err := service.EncounterRequestRepo.Save(encounterReqDto.ToReqModel())
 		if err != nil {
@@ -126,12 +115,12 @@ func (service *EncounterService) CreateTouristEncounter(encounterDto dto.Encount
 	}
 }
 
-func (service *EncounterService) CreateAuthorEncounter(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
+func (service *EncounterService) CreateByAuthor(encounterDto dto.EncounterDto) (dto.EncounterDto, error) {
 	var savedEncounterDto dto.EncounterDto
 
 	if encounterDto.Type == "Location" {
-		var hiddenLocationEnconter = encounterDto.ToHiddenLocationModel()
-		savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEnconter)
+		var hiddenLocationEncounter = encounterDto.ToHiddenLocationModel()
+		savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEncounter)
 		if err != nil {
 			return savedEncounterDto, fmt.Errorf("hidden location encounter cannot be created: %v", err)
 		}

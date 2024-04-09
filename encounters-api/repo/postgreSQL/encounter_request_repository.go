@@ -15,44 +15,6 @@ func NewEncounterRequestRepository(db *gorm.DB) *EncounterRequestRepository {
 	return &EncounterRequestRepository{DB: db}
 }
 
-func (r *EncounterRequestRepository) AcceptRequest(id int) (*model.EncounterRequest, error) {
-	requestToUpdate := &model.EncounterRequest{}
-	err := r.DB.First(requestToUpdate, id).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("not found %d", id)
-		}
-		return nil, err
-	}
-
-	requestToUpdate.Accept()
-	err = r.DB.Save(requestToUpdate).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return requestToUpdate, nil
-}
-
-func (r *EncounterRequestRepository) RejectRequest(id int) (*model.EncounterRequest, error) {
-	requestToUpdate := &model.EncounterRequest{}
-	err := r.DB.First(requestToUpdate, id).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("not found %d", id)
-		}
-		return nil, err
-	}
-
-	requestToUpdate.Reject()
-	err = r.DB.Save(requestToUpdate).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return requestToUpdate, nil
-}
-
 func (r *EncounterRequestRepository) Save(encounterReq model.EncounterRequest) (model.EncounterRequest, error) {
 	result := r.DB.Create(&encounterReq)
 	if result.Error != nil {
