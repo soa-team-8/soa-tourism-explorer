@@ -126,7 +126,7 @@ func (e *EncounterDto) ToSocialModel() model.SocialEncounter {
 	encounterType := mapStringToType(e.Type)
 
 	return model.SocialEncounter{
-		EncounterID: e.ID,
+		ID: e.ID,
 		Encounter: model.Encounter{
 			ID:          e.ID,
 			AuthorID:    e.AuthorID,
@@ -170,7 +170,7 @@ func (e *EncounterDto) ToHiddenLocationModel() model.HiddenLocationEncounter {
 	encounterType := mapStringToType(e.Type)
 
 	return model.HiddenLocationEncounter{
-		EncounterID: e.ID,
+		ID: e.ID,
 		Encounter: model.Encounter{
 			ID:          e.ID,
 			AuthorID:    e.AuthorID,

@@ -1,4 +1,4 @@
-package repo
+package postgreSQL
 
 import (
 	"encounters/model"
@@ -45,38 +45,18 @@ func (r *HiddenLocationRepository) FindById(id uint64) (*model.HiddenLocationEnc
 }
 
 func (r *HiddenLocationRepository) Update(hiddenLocationEncounter model.HiddenLocationEncounter) (model.HiddenLocationEncounter, error) {
-	result := r.Db.Model(&model.HiddenLocationEncounter{}).Where("encounter_id = ?", hiddenLocationEncounter.EncounterID).Updates(&hiddenLocationEncounter)
+	result := r.Db.Model(&model.HiddenLocationEncounter{}).Where("encounter_id = ?", hiddenLocationEncounter.ID).Updates(&hiddenLocationEncounter)
 
 	if result.Error != nil {
 		return model.HiddenLocationEncounter{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return model.HiddenLocationEncounter{}, fmt.Errorf("location encounter with ID %d does not exist", hiddenLocationEncounter.EncounterID)
+		return model.HiddenLocationEncounter{}, fmt.Errorf("location encounter with ID %d does not exist", hiddenLocationEncounter.ID)
 	}
 
 	return hiddenLocationEncounter, nil
 }
-
-/*
-func (r *HiddenLocationRepository) Update(hiddenLocationEncounter model.HiddenLocationEncounter) (model.HiddenLocationEncounter, error) {
-	result := r.Db.Save(hiddenLocationEncounter)
-	if result.Error != nil {
-		return model.HiddenLocationEncounter{}, result.Error
-	}
-	return hiddenLocationEncounter, nil
-}
-*/
-
-/*
-func (r *HiddenLocationRepository) DeleteById(id uint64) error {
-	result := r.Db.Delete(&model.HiddenLocationEncounter{}, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-*/
 
 func (r *HiddenLocationRepository) DeleteById(id uint64) error {
 	tx := r.Db.Begin()

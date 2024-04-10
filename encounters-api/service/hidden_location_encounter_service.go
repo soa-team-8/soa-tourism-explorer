@@ -2,18 +2,18 @@ package service
 
 import (
 	"encounters/dto"
-	"encounters/repo"
+	"encounters/repo/postgreSQL"
 	"fmt"
 	"gorm.io/gorm"
 )
 
 type HiddenLocationEncounterService struct {
-	HiddenLocationEncounterRepo *repo.HiddenLocationRepository
+	HiddenLocationEncounterRepo *postgreSQL.HiddenLocationRepository
 }
 
 func NewHiddenLocationEncounterService(db *gorm.DB) *HiddenLocationEncounterService {
 	return &HiddenLocationEncounterService{
-		HiddenLocationEncounterRepo: &repo.HiddenLocationRepository{
+		HiddenLocationEncounterRepo: &postgreSQL.HiddenLocationRepository{
 			Db: db,
 		},
 	}

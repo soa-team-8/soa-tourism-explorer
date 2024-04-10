@@ -6,8 +6,8 @@ import (
 )
 
 type HiddenLocationEncounter struct {
-	EncounterID       uint64 `gorm:"primaryKey;autoIncrement"`
-	Encounter         Encounter
+	ID                uint64         `gorm:"primaryKey;autoIncrement"`
+	Encounter         Encounter      `gorm:"-"`
 	LocationLongitude float64        `json:"location_longitude"`
 	LocationLatitude  float64        `json:"location_latitude"`
 	Image             pq.StringArray `json:"pictures" gorm:"type:text[]"`

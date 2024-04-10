@@ -44,11 +44,9 @@ func (repo *EncounterRequestRepository) Save(encounterReq model.EncounterRequest
 }
 
 func (repo *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, error) {
-	// Define an empty slice to hold the results
 	var encounterRequests []model.EncounterRequest
 
-	// Find all documents in the collection
-	cursor, err := repo.collection.Find(repo.ctx, bson.M{})
+	cursor, err := repo.collection.Find(repo.ctx, bson.M{"_id": bson.M{"$ne": "encounterRequestID"}})
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,6 @@ func (repo *EncounterRequestRepository) FindAll() ([]model.EncounterRequest, err
 		}
 	}()
 
-	// Iterate over the cursor and decode documents into the slice
 	for cursor.Next(repo.ctx) {
 		var request model.EncounterRequest
 		if err := cursor.Decode(&request); err != nil {
@@ -88,13 +85,8 @@ func (repo *EncounterRequestRepository) FindByID(id int) (*model.EncounterReques
 }
 
 func (repo *EncounterRequestRepository) Update(encounterReq model.EncounterRequest) (*model.EncounterRequest, error) {
-	// Convert the ID to string
-	//idStr := strconv.Itoa(int(encounterReq.ID))
-
-	// Define the filter to find the document by ID
 	filter := bson.M{"id": encounterReq.ID}
 
-	// Define the update to set the new values
 	update := bson.M{
 		"$set": bson.M{
 			"encounterid": encounterReq.EncounterId,
@@ -103,7 +95,6 @@ func (repo *EncounterRequestRepository) Update(encounterReq model.EncounterReque
 		},
 	}
 
-	// Perform the update operation
 	_, err := repo.collection.UpdateOne(repo.ctx, filter, update)
 	if err != nil {
 		return nil, err
@@ -127,7 +118,6 @@ func (repo *EncounterRequestRepository) getNextSequence() (int32, error) {
 	err := repo.collection.FindOneAndUpdate(repo.ctx, filter, update).Decode(&result)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			// If counter doesn't exist, initialize it
 			counter := bson.M{"_id": "encounterRequestID", "seq": 2}
 			_, err := repo.collection.InsertOne(repo.ctx, counter)
 			if err != nil {

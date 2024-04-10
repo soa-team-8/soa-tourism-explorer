@@ -10,12 +10,12 @@ import (
 type EncounterService struct {
 	EncounterRepo        repo.EncounterRepository
 	EncounterRequestRepo repo.EncounterRequestRepository
-	SocialEncounterRepo  *repo.SocialEncounterRepository
-	HiddenEncounterRepo  *repo.HiddenLocationRepository
+	SocialEncounterRepo  repo.SocialEncounterRepository
+	HiddenEncounterRepo  repo.HiddenLocationRepository
 }
 
 func NewEncounterService(encounterRepo repo.EncounterRepository, encounterRequestRepo repo.EncounterRequestRepository,
-	socialEncounterRepo *repo.SocialEncounterRepository, hiddenEncounterRepo *repo.HiddenLocationRepository) *EncounterService {
+	socialEncounterRepo repo.SocialEncounterRepository, hiddenEncounterRepo repo.HiddenLocationRepository) *EncounterService {
 	return &EncounterService{
 		EncounterRequestRepo: encounterRequestRepo,
 		EncounterRepo:        encounterRepo,
@@ -84,14 +84,14 @@ func (service *EncounterService) CreateByTourist(encounterDto dto.EncounterDto, 
 		if encounterDto.Type == "Location" {
 			var hiddenLocationEncounter = encounterDto.ToHiddenLocationModel()
 			savedEncounter, err := service.HiddenEncounterRepo.Save(hiddenLocationEncounter)
-			savedEncId = savedEncounter.EncounterID
+			savedEncId = savedEncounter.ID
 			if err != nil {
 				return dto.EncounterDto{}, fmt.Errorf("hidden location encounter cannot be created: %v", err)
 			}
 		} else if encounterDto.Type == "Social" {
 			var socialEncounter = encounterDto.ToSocialModel()
 			savedEncounter, err := service.SocialEncounterRepo.Save(socialEncounter)
-			savedEncId = savedEncounter.EncounterID
+			savedEncId = savedEncounter.ID
 			if err != nil {
 				return dto.EncounterDto{}, fmt.Errorf("social encounter cannot be created: %v", err)
 			}

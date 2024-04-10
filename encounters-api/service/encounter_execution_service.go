@@ -12,16 +12,16 @@ import (
 type EncounterExecutionService struct {
 	ExecutionRepo         *repo.EncounterExecutionRepository
 	EncounterRepo         *postgreSQL.EncounterRepository
-	SocialEncounterRepo   *repo.SocialEncounterRepository
-	LocationEncounterRepo *repo.HiddenLocationRepository
+	SocialEncounterRepo   *postgreSQL.SocialEncounterRepository
+	LocationEncounterRepo *postgreSQL.HiddenLocationRepository
 }
 
 func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
 	return &EncounterExecutionService{
 		ExecutionRepo:         repo.NewEncounterExecutionRepository(db),
 		EncounterRepo:         postgreSQL.NewEncounterRepository(db),
-		SocialEncounterRepo:   repo.NewSocialEncounterRepository(db),
-		LocationEncounterRepo: repo.NewHiddenLocationRepository(db),
+		SocialEncounterRepo:   postgreSQL.NewSocialEncounterRepository(db),
+		LocationEncounterRepo: postgreSQL.NewHiddenLocationRepository(db),
 	}
 }
 
@@ -343,7 +343,7 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID 
 		return nil, 0, fmt.Errorf("execution not activated")
 	}
 
-	socialEncounter, err := service.SocialEncounterRepo.FindById(oldExecution.EncounterID)
+	socialEncounter, err := service.SocialEncounterRepo.FindByID(oldExecution.EncounterID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("encounter with ID %d not found", oldExecution.EncounterID)
 	}
@@ -358,7 +358,7 @@ func (service *EncounterExecutionService) CheckIfInRange(executionID, touristID 
 
 	var newXP int32 = 0
 	if socialEncounter.IsRequiredPeopleNumber() {
-		socialExecutions, err := service.ExecutionRepo.FindAllByType(socialEncounter.EncounterID, model.Social)
+		socialExecutions, err := service.ExecutionRepo.FindAllByType(socialEncounter.ID, model.Social)
 		if err != nil {
 			return nil, 0, fmt.Errorf(fmt.Sprintln("Executions not found"))
 		}
@@ -430,7 +430,7 @@ func (service *EncounterExecutionService) CheckIfInRangeLocation(executionID, to
 	locationEncounter, err := service.LocationEncounterRepo.FindById(oldExecution.EncounterID)
 
 	if err != nil {
-		return nil, 0, fmt.Errorf("encounter with ID %d not found", locationEncounter.EncounterID)
+		return nil, 0, fmt.Errorf("encounter with ID %d not found", locationEncounter.ID)
 	}
 
 	isInRange := locationEncounter.CheckIfInRangeLocation(touristLongitude, touristLatitude)
@@ -492,7 +492,7 @@ func (service *EncounterExecutionService) isTouristInRange(execution model.Encou
 		return distance < thresholdDistance
 
 	case model.Social:
-		socialEncounter, err := service.SocialEncounterRepo.FindById(execution.EncounterID)
+		socialEncounter, err := service.SocialEncounterRepo.FindByID(execution.EncounterID)
 		if err != nil {
 			return false
 		}

@@ -5,6 +5,7 @@ import (
 	"encounters/model"
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -41,24 +42,14 @@ func (r *EncounterRepository) Save(encounter model.Encounter) (model.Encounter, 
 	}
 
 	return encounter, nil
-
-	/*
-		encounterBSON, err := bson.Marshal(encounter)
-		if err != nil {
-			return model.Encounter{}, err
-		}
-
-		_, err = r.collection.InsertOne(r.ctx, encounterBSON)
-		if err != nil {
-			return model.Encounter{}, err
-		}
-		return encounter, nil
-	*/
 }
 
 func (r *EncounterRepository) FindByID(id uint64) (*model.Encounter, error) {
 	filter := bson.M{"id": id}
-	var encounter model.Encounter
+	var encounter struct {
+		Encounter bson.M `bson:"encounter"`
+	}
+
 	err := r.collection.FindOne(r.ctx, filter).Decode(&encounter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -66,14 +57,31 @@ func (r *EncounterRepository) FindByID(id uint64) (*model.Encounter, error) {
 		}
 		return nil, err
 	}
-	return &encounter, nil
+
+	var result model.Encounter
+
+	if len(encounter.Encounter) > 0 {
+		err = mapstructure.Decode(encounter.Encounter, &result)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := r.collection.FindOne(r.ctx, filter).Decode(&result)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				return nil, fmt.Errorf("encounter not found: %d", id)
+			}
+			return nil, err
+		}
+	}
+
+	return &result, nil
 }
 
 func (r *EncounterRepository) FindAll() ([]model.Encounter, error) {
 	var encounters []model.Encounter
 
-	// Find all documents in the collection
-	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	cursor, err := r.collection.Find(r.ctx, bson.M{"_id": bson.M{"$ne": "encounterID"}})
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +91,29 @@ func (r *EncounterRepository) FindAll() ([]model.Encounter, error) {
 		}
 	}()
 
-	// Iterate over the cursor and decode documents into the slice
 	for cursor.Next(r.ctx) {
-		var encounter model.Encounter
+		var encounter struct {
+			Encounter bson.M `bson:"encounter"`
+		}
 		if err := cursor.Decode(&encounter); err != nil {
 			return nil, err
 		}
-		encounters = append(encounters, encounter)
+
+		var result model.Encounter
+
+		if len(encounter.Encounter) > 0 {
+			err := mapstructure.Decode(encounter.Encounter, &result)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err := cursor.Decode(&result)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		encounters = append(encounters, result)
 	}
 	if err := cursor.Err(); err != nil {
 		return nil, err
@@ -106,25 +130,19 @@ func (r *EncounterRepository) DeleteByID(id uint64) error {
 }
 
 func (r *EncounterRepository) Update(encounter model.Encounter) (model.Encounter, error) {
-
-	// Define the filter to find the document by ID
 	filter := bson.M{"id": encounter.ID}
 
-	// Define the update to set the new values
-	update := bson.M{
-		"$set": bson.M{
-			"authorid":    encounter.AuthorID,
-			"name":        encounter.Name,
-			"description": encounter.Description,
-			"xp":          encounter.XP,
-			"status":      encounter.Status,
-			"type":        encounter.Type,
-			"longitude":   encounter.Longitude,
-			"latitude":    encounter.Latitude,
-		},
+	update := bson.M{"$set": bson.M{}}
+
+	switch encounter.Type {
+	case model.Location:
+		update["$set"].(bson.M)["encounter"] = encounter
+	case model.Social:
+		update["$set"].(bson.M)["encounter"] = encounter
+	default:
+		update["$set"] = encounter
 	}
 
-	// Perform the update operation
 	_, err := r.collection.UpdateOne(r.ctx, filter, update)
 	if err != nil {
 		return model.Encounter{}, err
@@ -133,6 +151,7 @@ func (r *EncounterRepository) Update(encounter model.Encounter) (model.Encounter
 	return encounter, nil
 }
 
+// TODO usages???
 func (r *EncounterRepository) FindByIds(ids []uint64) ([]model.Encounter, error) {
 	var encounters []model.Encounter
 
@@ -179,7 +198,6 @@ func (r *EncounterRepository) getNextSequence() (int32, error) {
 	err := r.collection.FindOneAndUpdate(r.ctx, filter, update).Decode(&result)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			// If counter doesn't exist, initialize it
 			counter := bson.M{"_id": "encounterID", "seq": 2}
 			_, err := r.collection.InsertOne(r.ctx, counter)
 			if err != nil {

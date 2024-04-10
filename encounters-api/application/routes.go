@@ -2,7 +2,6 @@ package application
 
 import (
 	"encounters/handler"
-	"encounters/repo"
 	"encounters/repo/mongoDB"
 	"encounters/service"
 
@@ -69,8 +68,8 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 	executionService := service.NewEncounterExecutionService(a.postgresDB)
 	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
 	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
-	socialEncounterRepository := repo.NewSocialEncounterRepository(a.postgresDB)
-	locationEncounterRepository := repo.NewHiddenLocationRepository(a.postgresDB)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
 	encounterService := service.NewEncounterService(encounterRepository, encounterRequestRepository,
 		socialEncounterRepository, locationEncounterRepository)
 	executionHandler := handler.NewEncounterExecutionHandler(executionService, encounterService)
@@ -120,8 +119,8 @@ func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
 func (a *App) createEncounterService() *service.EncounterService {
 	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
 	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
-	socialEncounterRepository := repo.NewSocialEncounterRepository(a.postgresDB)
-	locationEncounterRepository := repo.NewHiddenLocationRepository(a.postgresDB)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
 	return service.NewEncounterService(encounterRepository, encounterRequestRepository, socialEncounterRepository, locationEncounterRepository)
 }
 

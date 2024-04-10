@@ -64,7 +64,6 @@ func (r *EncounterExecutionRepository) Update(encounterExecution model.Encounter
 	return encounterExecution, nil
 }
 
-// New methods with complex queries
 func (r *EncounterExecutionRepository) FindAllByTourist(touristID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
@@ -145,7 +144,6 @@ func (r *EncounterExecutionRepository) FindAllByType(encounterID uint64, encount
 func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, touristID uint64) (*model.EncounterExecution, error) {
 	var encounterExecution model.EncounterExecution
 
-	// Query to fetch EncounterExecution with associated Encounter and matching TouristID and EncounterID
 	if err := r.DB.Preload("Encounter").
 		Where("tourist_id = ? AND encounter_id = ?", touristID, encounterID).
 		First(&encounterExecution).Error; err != nil {
@@ -154,21 +152,6 @@ func (r *EncounterExecutionRepository) FindByEncounterAndTourist(encounterID, to
 
 	return &encounterExecution, nil
 }
-
-/*
-func (r *EncounterExecutionRepository) FindAllActiveSocialExcludingID(socialEncounterID, excludeID uint64) ([]model.EncounterExecution, error) {
-	var encounterExecutions []model.EncounterExecution
-
-	// Query to fetch active EncounterExecutions with associated Encounter, matching social Encounter ID and excluding specific ID
-	if err := r.DB.Preload("Encounter").
-		Where("encounter_id = ? AND encounter.type = ? AND status = ? AND id != ?", socialEncounterID, model.Social, model.Active, excludeID).
-		Find(&encounterExecutions).Error; err != nil {
-		return nil, err
-	}
-
-	return encounterExecutions, nil
-}
-*/
 
 func (r *EncounterExecutionRepository) UpdateRange(encounters []model.EncounterExecution) ([]model.EncounterExecution, error) {
 	tx := r.DB.Begin()
