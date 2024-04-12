@@ -65,13 +65,8 @@ func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
 }
 
 func (a *App) loadExecutionRoutes(router *mux.Router) {
-	executionService := service.NewEncounterExecutionService(a.postgresDB)
-	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
-	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
-	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
-	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
-	encounterService := service.NewEncounterService(encounterRepository, encounterRequestRepository,
-		socialEncounterRepository, locationEncounterRepository)
+	executionService := a.createEncounterExecutionService()
+	encounterService := a.createEncounterService()
 	executionHandler := handler.NewEncounterExecutionHandler(executionService, encounterService)
 
 	router.HandleFunc("/{touristId}", executionHandler.Create).Methods("POST")
@@ -128,6 +123,14 @@ func (a *App) createEncounterRequestService() *service.EncounterRequestService {
 	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
 	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
 	return service.NewEncounterRequestService(encounterRequestRepository, encounterRepository)
+}
+
+func (a *App) createEncounterExecutionService() *service.EncounterExecutionService {
+	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
+	executionRepository := mongoDB.NewEncounterExecutionRepository(a.mongoClient)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
+	return service.NewEncounterExecutionService(executionRepository, encounterRepository, socialEncounterRepository, locationEncounterRepository)
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {
