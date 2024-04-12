@@ -108,8 +108,6 @@ func createEncountersDatabase(ctx context.Context, client *mongo.Client) error {
 	err := client.Database("encounters").CreateCollection(ctx, "encounterExecutions")
 	err = client.Database("encounters").CreateCollection(ctx, "encounterRequests")
 	err = client.Database("encounters").CreateCollection(ctx, "encounters")
-	err = client.Database("encounters").CreateCollection(ctx, "hiddenLocationEncounters")
-	err = client.Database("encounters").CreateCollection(ctx, "socialEncounters")
 	return err
 }
 
