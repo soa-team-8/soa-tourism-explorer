@@ -3,25 +3,24 @@ package service
 import (
 	"encounters/model"
 	"encounters/repo"
-	"encounters/repo/postgreSQL"
 	"fmt"
-	"gorm.io/gorm"
 	"time"
 )
 
 type EncounterExecutionService struct {
-	ExecutionRepo         *repo.EncounterExecutionRepository
-	EncounterRepo         *postgreSQL.EncounterRepository
-	SocialEncounterRepo   *postgreSQL.SocialEncounterRepository
-	LocationEncounterRepo *postgreSQL.HiddenLocationRepository
+	ExecutionRepo         repo.EncounterExecutionRepository
+	EncounterRepo         repo.EncounterRepository
+	SocialEncounterRepo   repo.SocialEncounterRepository
+	LocationEncounterRepo repo.HiddenLocationRepository
 }
 
-func NewEncounterExecutionService(db *gorm.DB) *EncounterExecutionService {
+func NewEncounterExecutionService(executionRepo repo.EncounterExecutionRepository, encounterRepo repo.EncounterRepository,
+	socialEncounterRepo repo.SocialEncounterRepository, locationEncounterRepo repo.HiddenLocationRepository) *EncounterExecutionService {
 	return &EncounterExecutionService{
-		ExecutionRepo:         repo.NewEncounterExecutionRepository(db),
-		EncounterRepo:         postgreSQL.NewEncounterRepository(db),
-		SocialEncounterRepo:   postgreSQL.NewSocialEncounterRepository(db),
-		LocationEncounterRepo: postgreSQL.NewHiddenLocationRepository(db),
+		ExecutionRepo:         executionRepo,
+		EncounterRepo:         encounterRepo,
+		SocialEncounterRepo:   socialEncounterRepo,
+		LocationEncounterRepo: locationEncounterRepo,
 	}
 }
 
@@ -29,6 +28,14 @@ func (service *EncounterExecutionService) Create(execution model.EncounterExecut
 	if execution.TouristID != touristID {
 		return model.EncounterExecution{}, fmt.Errorf("encounter touristID does not match provided touristID")
 	}
+
+	encounter, err := service.EncounterRepo.FindByID(execution.EncounterID)
+
+	if err != nil {
+		return model.EncounterExecution{}, fmt.Errorf("cannot find encounter: %v", err)
+	}
+
+	execution.Encounter = *encounter
 
 	savedExecution, err := service.ExecutionRepo.Save(execution)
 
@@ -58,12 +65,10 @@ func (service *EncounterExecutionService) GetAll() ([]model.EncounterExecution, 
 }
 
 func (service *EncounterExecutionService) DeleteByID(id uint64, touristID uint64) error {
-	// Check permission
 	if err := service.checkPermission(id, touristID); err != nil {
 		return err
 	}
 
-	// Delete the execution
 	err := service.ExecutionRepo.DeleteByID(id)
 	if err != nil {
 		return fmt.Errorf("execution cannot be deleted: %v", err)
@@ -287,28 +292,6 @@ func (service *EncounterExecutionService) GetVisibleByTour(touristID uint64, tou
 		}
 
 	}
-
-	/*
-			closestDistance := math.Inf(1) // Positive infinity
-
-			for _, encounter := range encounters {
-				if model.IsCloseEnough(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude) {
-					distance := model.CalculateDistance(encounter.Longitude, encounter.Latitude, touristLongitude, touristLatitude)
-					if distance < closestDistance {
-						closestEncounter = &encounter
-						closestDistance = distance
-					}
-				}
-			}
-
-
-		if closestEncounter == nil {
-			return model.EncounterExecution{}, errors.NewEncounterRepository("no close encounter found")
-		}
-	*/
-
-	// TODO ask Anja what to do...
-	//bestDistance := model.CalculateDistance(closestEncounter.Longitude, closestEncounter.Latitude, touristLongitude, touristLatitude)
 
 	potentialEncounter, err := service.ExecutionRepo.FindByEncounterAndTourist(closestEncounter.ID, touristID)
 	if err != nil {

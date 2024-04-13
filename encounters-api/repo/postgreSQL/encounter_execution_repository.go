@@ -1,4 +1,4 @@
-package repo
+package postgreSQL
 
 import (
 	"encounters/model"
@@ -113,6 +113,7 @@ func (r *EncounterExecutionRepository) FindByEncounter(encounterID uint64) (*mod
 
 	return &encounterExecution, nil
 }
+
 func (r *EncounterExecutionRepository) FindAllByEncounter(encounterID uint64) ([]model.EncounterExecution, error) {
 	var encounterExecutions []model.EncounterExecution
 
