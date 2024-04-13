@@ -28,8 +28,6 @@ func LoadConfig() Config {
 	} else {
 		log.Println("MONGODB_ADDR nije postavljena. Koristi se podrazumevana vrednost.")
 	}
-
-	// Ispisujemo vrednost promenljive MONGODB_ADDR
 	log.Println("Vrednost MONGODB_ADDR:", cfg.MongoDBAddress)
 
 	if serverPort, exists := os.LookupEnv("SERVER_PORT"); exists {
