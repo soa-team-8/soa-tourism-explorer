@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"followers/model"
 	"followers/service"
+	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type contextKey string
@@ -30,6 +32,28 @@ func (handler *SocialProfileHandler) CreateUser(rw http.ResponseWriter, r *http.
 		return
 	}
 	rw.WriteHeader(http.StatusCreated)
+}
+
+func (handler *SocialProfileHandler) Follow(rw http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	followerID, err := strconv.ParseUint(params["followerId"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid follower ID", http.StatusBadRequest)
+		return
+	}
+	followedID, err := strconv.ParseUint(params["followedId"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid followed ID", http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.Follow(followerID, followedID)
+	if err != nil {
+		http.Error(rw, "Failed to follow user", http.StatusInternalServerError)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (handler *SocialProfileHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {

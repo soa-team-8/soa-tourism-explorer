@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"followers/model"
 	repository "followers/repository"
 )
@@ -21,8 +22,32 @@ func (service *SocialProfileService) CreateUser(user *model.User) error {
 }
 
 func (service *SocialProfileService) Follow(followerID uint64, followedID uint64) error {
+	if followerID == followedID {
+		return errors.New("you cannot follow yourself")
+	}
 
-	// TODO: implement follow
+	// followers social profile
+	followerSocialProfile, err := service.SocialProfileRepository.GetByUserID(followerID)
+	if err != nil {
+		return err
+	}
+	followerSocialProfile.FollowedIds = append(followerSocialProfile.FollowedIds, &followedID)
+	err = service.SocialProfileRepository.Update(followerSocialProfile)
+	if err != nil {
+		return err
+	}
+
+	// followed users social profile
+	followedSocialProfile, err := service.SocialProfileRepository.GetByUserID(followedID)
+	if err != nil {
+		return err
+	}
+	followedSocialProfile.FollowersIds = append(followedSocialProfile.FollowersIds, &followerID)
+	err = service.SocialProfileRepository.Update(followedSocialProfile)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
