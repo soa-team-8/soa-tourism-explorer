@@ -52,7 +52,36 @@ func (service *SocialProfileService) Follow(followerID uint64, followedID uint64
 }
 
 func (service *SocialProfileService) Unfollow(followerID uint64, followedID uint64) error {
+	followedSocialProfile, err := service.SocialProfileRepository.GetByUserID(followedID)
+	if err != nil {
+		return err
+	}
+	followedSocialProfile.FollowersIds = removeID(followedSocialProfile.FollowersIds, followerID)
+	err = service.SocialProfileRepository.Update(followedSocialProfile)
+	if err != nil {
+		return err
+	}
 
-	// TODO: implement unfollow
+	followerSocialProfile, err := service.SocialProfileRepository.GetByUserID(followerID)
+	if err != nil {
+		return err
+	}
+
+	followerSocialProfile.FollowedIds = removeID(followerSocialProfile.FollowedIds, followedID)
+	err = service.SocialProfileRepository.Update(followerSocialProfile)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func removeID(ids []*uint64, idToRemove uint64) []*uint64 {
+	var updatedIDs []*uint64
+	for _, id := range ids {
+		if *id != idToRemove {
+			updatedIDs = append(updatedIDs, id)
+		}
+	}
+	return updatedIDs
 }

@@ -56,6 +56,28 @@ func (handler *SocialProfileHandler) Follow(rw http.ResponseWriter, r *http.Requ
 	rw.WriteHeader(http.StatusOK)
 }
 
+func (handler *SocialProfileHandler) Unfollow(rw http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	followerID, err := strconv.ParseUint(params["followerId"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid follower ID", http.StatusBadRequest)
+		return
+	}
+	followedID, err := strconv.ParseUint(params["followedId"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid followed ID", http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.Unfollow(followerID, followedID)
+	if err != nil {
+		http.Error(rw, "Failed to unfollow user", http.StatusInternalServerError)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
+}
+
 func (handler *SocialProfileHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "application/json")
@@ -65,13 +87,17 @@ func (handler *SocialProfileHandler) MiddlewareContentTypeSet(next http.Handler)
 
 func (handler *SocialProfileHandler) MiddlewareUserDeserialization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		user := &model.User{}
-		err := json.NewDecoder(r.Body).Decode(user)
-		if err != nil {
-			http.Error(rw, "Unable to decode JSON", http.StatusBadRequest)
-			return
+		if r.Method == http.MethodPost && r.ContentLength > 0 {
+			user := &model.User{}
+			err := json.NewDecoder(r.Body).Decode(user)
+			if err != nil {
+				http.Error(rw, "Unable to decode JSON", http.StatusBadRequest)
+				return
+			}
+			ctx := context.WithValue(r.Context(), ContextKeyUser, user)
+			next.ServeHTTP(rw, r.WithContext(ctx))
+		} else {
+			next.ServeHTTP(rw, r)
 		}
-		ctx := context.WithValue(r.Context(), ContextKeyUser, user)
-		next.ServeHTTP(rw, r.WithContext(ctx))
 	})
 }
