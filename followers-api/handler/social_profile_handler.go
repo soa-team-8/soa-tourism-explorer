@@ -102,6 +102,28 @@ func (handler *SocialProfileHandler) GetProfile(rw http.ResponseWriter, r *http.
 	}
 }
 
+func (handler *SocialProfileHandler) GetRecommendations(rw http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.ParseUint(params["id"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	recommendations, err := handler.service.GetRecommendations(id)
+	if err != nil {
+		http.Error(rw, "Failed to get recommendations", http.StatusInternalServerError)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(rw).Encode(recommendations)
+	if err != nil {
+		return
+	}
+}
+
 func (handler *SocialProfileHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "application/json")

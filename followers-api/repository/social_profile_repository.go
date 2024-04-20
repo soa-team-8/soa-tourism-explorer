@@ -485,3 +485,33 @@ func (repo *SocialProfileRepository) GetFollowableIDs(userID uint64) ([]*uint64,
 
 	return followable, nil
 }
+
+func (repo *SocialProfileRepository) GetRecommendations(userID uint64) ([]*model.User, error) {
+	recommendations := []*model.User{}
+
+	followedIDs, err := repo.GetFollowedIDs(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get followed users: %w", err)
+	}
+
+	newFollowedIDs := make(map[uint64]struct{})
+	for _, id := range followedIDs {
+		ids, err := repo.GetFollowedIDs(*id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get followed users: %w", err)
+		}
+		for _, newID := range ids {
+			newFollowedIDs[*newID] = struct{}{}
+		}
+	}
+
+	for id := range newFollowedIDs {
+		username, err := repo.GetUsernameByID(id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get username for followed ID %d: %w", id, err)
+		}
+		recommendations = append(recommendations, &model.User{ID: id, Username: username})
+	}
+
+	return recommendations, nil
+}

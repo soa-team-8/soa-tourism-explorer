@@ -51,9 +51,38 @@ func (service *SocialProfileService) Unfollow(followerID uint64, followedID uint
 }
 
 func (service *SocialProfileService) GetProfile(ID uint64) (*model.SocialProfile, error) {
-	followerSocialProfile, err := service.SocialProfileRepository.GetSocialProfile(ID)
+	socialProfile, err := service.SocialProfileRepository.GetSocialProfile(ID)
 	if err != nil {
 		return nil, err
 	}
-	return followerSocialProfile, nil
+	return socialProfile, nil
+}
+
+func (service *SocialProfileService) GetRecommendations(ID uint64) ([]*model.User, error) {
+	socialProfile, err := service.SocialProfileRepository.GetSocialProfile(ID)
+	if err != nil {
+		return nil, err
+	}
+	recommendations, err := service.SocialProfileRepository.GetRecommendations(ID)
+	if err != nil {
+		return nil, err
+	}
+	filteredRecommendations := make([]*model.User, 0)
+	followedMap := make(map[uint64]bool)
+	for _, followed := range socialProfile.Followed {
+		followedMap[followed.ID] = true
+	}
+	for _, recommendation := range recommendations {
+		if !followedMap[recommendation.ID] {
+			filteredRecommendations = append(filteredRecommendations, recommendation)
+		}
+	}
+
+	for i, rec := range filteredRecommendations {
+		if rec.ID == ID {
+			filteredRecommendations = append(filteredRecommendations[:i], filteredRecommendations[i+1:]...)
+			break
+		}
+	}
+	return filteredRecommendations, nil
 }
