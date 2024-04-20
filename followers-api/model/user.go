@@ -6,8 +6,8 @@ import (
 )
 
 type User struct {
-	ID       uint64 `json:"id,omitempty"`
-	Username string `json:"username,omitempty"`
+	ID       uint64 `json:"id"`
+	Username string `json:"username"`
 }
 
 type Users []*User

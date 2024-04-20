@@ -54,23 +54,11 @@ func (repo *SocialProfileRepository) WriteUser(user *model.User) error {
 		}
 	}(session, ctx)
 
-	result, err := session.Run(ctx,
+	_, err := session.Run(ctx,
 		"CREATE (user:User) SET user.Id = $id, user.Username = $username RETURN user",
 		map[string]interface{}{"id": user.ID, "username": user.Username})
 	if err != nil {
 		return fmt.Errorf("failed to execute user creation query: %w", err)
-	}
-	if !result.Next(ctx) {
-		return errors.New("user creation operation did not return any result")
-	}
-
-	_, err = session.Run(ctx,
-		"MATCH (user:User {Id: $id}) "+
-			"CREATE (social:SocialProfile {UserId: $id, FollowersIds: [], FollowedIds: []}) "+
-			"CREATE (user)-[:HAS_PROFILE]->(social)",
-		map[string]interface{}{"id": user.ID})
-	if err != nil {
-		return fmt.Errorf("failed to create social profile node: %w", err)
 	}
 
 	return nil
@@ -100,6 +88,88 @@ func (repo *SocialProfileRepository) SaveUser(user *model.User) (bool, error) {
 	return false, nil
 }
 
+//	func (repo *SocialProfileRepository) Follow(userID, followedUserID uint64) error {
+//		ctx := context.Background()
+//		session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+//		defer func(session neo4j.SessionWithContext, ctx context.Context) {
+//			err := session.Close(ctx)
+//			if err != nil {
+//				log.Printf("Error closing session: %v", err)
+//			}
+//		}(session, ctx)
+//
+//		_, err := session.Run(ctx,
+//			"MATCH (user:User {Id: $userID}), (followedUser:User {Id: $followedUserID}) "+
+//				"CREATE (user)-[:FOLLOWS]->(followedUser)",
+//			map[string]interface{}{"userID": userID, "followedUserID": followedUserID})
+//		if err != nil {
+//			return fmt.Errorf("failed to execute follow query: %w", err)
+//		}
+//
+//		return nil
+//	}
+func (repo *SocialProfileRepository) Follow(userID, followedUserID uint64) error {
+	ctx := context.Background()
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	defer func(session neo4j.SessionWithContext, ctx context.Context) {
+		err := session.Close(ctx)
+		if err != nil {
+			log.Printf("Error closing session: %v", err)
+		}
+	}(session, ctx)
+
+	// Check if the follow relationship already exists
+	result, err := session.Run(ctx,
+		"MATCH (user:User {Id: $userID})-[:FOLLOWS]->(followedUser:User {Id: $followedUserID}) RETURN COUNT(*)",
+		map[string]interface{}{"userID": userID, "followedUserID": followedUserID})
+	if err != nil {
+		return fmt.Errorf("failed to execute follow check query: %w", err)
+	}
+
+	if result.Next(ctx) {
+		countValue, ok := result.Record().Get("COUNT(*)")
+		if !ok {
+			return fmt.Errorf("failed to get count of existing follow relationship")
+		}
+		count := countValue.(int64)
+		if count > 0 {
+			// Follow relationship already exists, no need to create a new one
+			return nil
+		}
+	}
+
+	// Create the follow relationship
+	_, err = session.Run(ctx,
+		"MATCH (user:User {Id: $userID}), (followedUser:User {Id: $followedUserID}) "+
+			"CREATE (user)-[:FOLLOWS]->(followedUser)",
+		map[string]interface{}{"userID": userID, "followedUserID": followedUserID})
+	if err != nil {
+		return fmt.Errorf("failed to execute follow query: %w", err)
+	}
+
+	return nil
+}
+func (repo *SocialProfileRepository) Unfollow(userID, followedUserID uint64) error {
+	ctx := context.Background()
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	defer func(session neo4j.SessionWithContext, ctx context.Context) {
+		err := session.Close(ctx)
+		if err != nil {
+			log.Printf("Error closing session: %v", err)
+		}
+	}(session, ctx)
+
+	_, err := session.Run(ctx,
+		"MATCH (user:User {Id: $userID})-[r:FOLLOWS]->(followedUser:User {Id: $followedUserID}) "+
+			"DELETE r",
+		map[string]interface{}{"userID": userID, "followedUserID": followedUserID})
+	if err != nil {
+		return fmt.Errorf("failed to execute unfollow query: %w", err)
+	}
+
+	return nil
+}
+
 func (repo *SocialProfileRepository) GenerateIncrementalID() (uint64, error) {
 	ctx := context.Background()
 	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
@@ -124,7 +194,7 @@ func (repo *SocialProfileRepository) GenerateIncrementalID() (uint64, error) {
 
 		maxID, ok := maxIDValue.(int64)
 		if !ok {
-			return 0, errors.New("max ID is not of type int64")
+			return 1, nil
 		}
 
 		newID := maxID + 1
@@ -178,7 +248,97 @@ func (repo *SocialProfileRepository) ReadUser(userId string) (model.User, error)
 	return model.User{ID: id, Username: username}, nil
 }
 
-func (repo *SocialProfileRepository) GetByUserID(userID uint64) (*model.SocialProfile, error) {
+func (repo *SocialProfileRepository) GetAllUsers(excludeID uint64) ([]*uint64, error) {
+	ctx := context.Background()
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	defer func(session neo4j.SessionWithContext, ctx context.Context) {
+		err := session.Close(ctx)
+		if err != nil {
+			log.Printf("Error closing session: %v", err)
+		}
+	}(session, ctx)
+
+	query := fmt.Sprintf("MATCH (user:User) WHERE user.Id <> $excludeID RETURN user.Id")
+	result, err := session.Run(ctx, query, map[string]interface{}{"excludeID": int64(excludeID)})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	var userIDs []*uint64
+	for result.Next(ctx) {
+		record := result.Record()
+		idValue, ok := record.Get("user.Id")
+		if !ok {
+			return nil, errors.New("missing user ID in result")
+		}
+
+		idFloat, ok := idValue.(int64)
+		if !ok {
+			return nil, errors.New("user ID is not of type int64")
+		}
+
+		id := uint64(idFloat)
+		userIDs = append(userIDs, &id)
+	}
+
+	return userIDs, nil
+}
+
+func (repo *SocialProfileRepository) GetSocialProfile(userID uint64) (*model.SocialProfile, error) {
+	socialProfile := &model.SocialProfile{
+		UserId:     userID,
+		Followers:  []*model.User{},
+		Followed:   []*model.User{},
+		Followable: []*model.User{},
+	}
+
+	// Get followers IDs
+	followerIDs, err := repo.GetFollowerIDs(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get followers: %w", err)
+	}
+
+	// Get followed IDs
+	followedIDs, err := repo.GetFollowedIDs(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get followed users: %w", err)
+	}
+
+	// Get followable IDs
+	followableIDs, err := repo.GetFollowableIDs(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get followable users: %w", err)
+	}
+
+	// Fetch usernames for each user ID and create model.User objects
+	for _, id := range followerIDs {
+		username, err := repo.GetUsernameByID(*id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get username for follower ID %d: %w", *id, err)
+		}
+		socialProfile.Followers = append(socialProfile.Followers, &model.User{ID: *id, Username: username})
+	}
+
+	for _, id := range followedIDs {
+		username, err := repo.GetUsernameByID(*id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get username for followed ID %d: %w", *id, err)
+		}
+		socialProfile.Followed = append(socialProfile.Followed, &model.User{ID: *id, Username: username})
+	}
+
+	for _, id := range followableIDs {
+		username, err := repo.GetUsernameByID(*id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get username for followable ID %d: %w", *id, err)
+		}
+		socialProfile.Followable = append(socialProfile.Followable, &model.User{ID: *id, Username: username})
+	}
+
+	return socialProfile, nil
+}
+
+func (repo *SocialProfileRepository) GetUsernameByID(userID uint64) (string, error) {
 	ctx := context.Background()
 	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
@@ -189,69 +349,31 @@ func (repo *SocialProfileRepository) GetByUserID(userID uint64) (*model.SocialPr
 	}(session, ctx)
 
 	result, err := session.Run(ctx,
-		"MATCH (social:SocialProfile {UserId: $userID}) RETURN social.FollowersIds, social.FollowedIds",
+		"MATCH (user:User {Id: $userID}) RETURN user.Username",
 		map[string]interface{}{"userID": userID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return "", fmt.Errorf("failed to execute query to get username: %w", err)
 	}
 
 	if !result.Next(ctx) {
-		return nil, errors.New("social profile not found")
+		return "", errors.New("user not found or username missing")
 	}
 
 	record := result.Record()
-	followersIdsValue, ok := record.Get("social.FollowersIds")
+	usernameValue, ok := record.Get("user.Username")
 	if !ok {
-		return nil, errors.New("missing followers IDs in result")
+		return "", errors.New("missing username in result")
 	}
-	followedIdsValue, ok := record.Get("social.FollowedIds")
+
+	username, ok := usernameValue.(string)
 	if !ok {
-		return nil, errors.New("missing followed IDs in result")
+		return "", errors.New("username is not a string")
 	}
 
-	var followersIds []*uint64
-	var followedIds []*uint64
-
-	if followersIdsValue != nil {
-		followersIdsInterface, ok := followersIdsValue.([]interface{})
-		if !ok {
-			return nil, errors.New("followers IDs are not of type []interface{}")
-		}
-
-		for _, idInterface := range followersIdsInterface {
-			idFloat, ok := idInterface.(int64)
-			if !ok {
-				return nil, errors.New("follower ID is not of type int64")
-			}
-			id := uint64(idFloat)
-			followersIds = append(followersIds, &id)
-		}
-	}
-
-	if followedIdsValue != nil {
-		followedIdsInterface, ok := followedIdsValue.([]interface{})
-		if !ok {
-			return nil, errors.New("followed IDs are not of type []interface{}")
-		}
-
-		for _, idInterface := range followedIdsInterface {
-			idFloat, ok := idInterface.(int64)
-			if !ok {
-				return nil, errors.New("followed ID is not of type int64")
-			}
-			id := uint64(idFloat)
-			followedIds = append(followedIds, &id)
-		}
-	}
-
-	return &model.SocialProfile{
-		UserID:       userID,
-		FollowersIds: followersIds,
-		FollowedIds:  followedIds,
-	}, nil
+	return username, nil
 }
 
-func (repo *SocialProfileRepository) Update(socialProfile *model.SocialProfile) error {
+func (repo *SocialProfileRepository) GetFollowerIDs(userID uint64) ([]*uint64, error) {
 	ctx := context.Background()
 	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
@@ -261,27 +383,105 @@ func (repo *SocialProfileRepository) Update(socialProfile *model.SocialProfile) 
 		}
 	}(session, ctx)
 
-	followersIds := make([]interface{}, len(socialProfile.FollowersIds))
-	for i, id := range socialProfile.FollowersIds {
-		followersIds[i] = *id
-	}
-
-	followedIds := make([]interface{}, len(socialProfile.FollowedIds))
-	for i, id := range socialProfile.FollowedIds {
-		followedIds[i] = *id
-	}
-
-	_, err := session.Run(ctx,
-		"MATCH (social:SocialProfile {UserId: $userID}) "+
-			"SET social.FollowersIds = $followersIds, social.FollowedIds = $followedIds",
-		map[string]interface{}{
-			"userID":       socialProfile.UserID,
-			"followersIds": followersIds,
-			"followedIds":  followedIds,
-		})
+	result, err := session.Run(ctx,
+		"MATCH (follower:User)-[:FOLLOWS]->(user:User {Id: $userID}) RETURN follower.Id",
+		map[string]interface{}{"userID": userID})
 	if err != nil {
-		return fmt.Errorf("failed to execute update query: %w", err)
+		return nil, fmt.Errorf("failed to execute query to get followers: %w", err)
 	}
 
-	return nil
+	var followers []*uint64
+	for result.Next(ctx) {
+		record := result.Record()
+		idValue, ok := record.Get("follower.Id")
+		if !ok {
+			return nil, errors.New("missing follower ID in result")
+		}
+
+		idFloat, ok := idValue.(int64)
+		if !ok {
+			return nil, errors.New("follower ID is not of type int64")
+		}
+
+		id := uint64(idFloat)
+		followers = append(followers, &id)
+	}
+
+	return followers, nil
+}
+
+func (repo *SocialProfileRepository) GetFollowedIDs(userID uint64) ([]*uint64, error) {
+	ctx := context.Background()
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	defer func(session neo4j.SessionWithContext, ctx context.Context) {
+		err := session.Close(ctx)
+		if err != nil {
+			log.Printf("Error closing session: %v", err)
+		}
+	}(session, ctx)
+
+	result, err := session.Run(ctx,
+		"MATCH (user:User {Id: $userID})-[:FOLLOWS]->(followed:User) RETURN followed.Id",
+		map[string]interface{}{"userID": userID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query to get followed users: %w", err)
+	}
+
+	var followed []*uint64
+	for result.Next(ctx) {
+		record := result.Record()
+		idValue, ok := record.Get("followed.Id")
+		if !ok {
+			return nil, errors.New("missing followed user ID in result")
+		}
+
+		idFloat, ok := idValue.(int64)
+		if !ok {
+			return nil, errors.New("followed user ID is not of type int64")
+		}
+
+		id := uint64(idFloat)
+		followed = append(followed, &id)
+	}
+
+	return followed, nil
+}
+
+func (repo *SocialProfileRepository) GetFollowableIDs(userID uint64) ([]*uint64, error) {
+	ctx := context.Background()
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	defer func(session neo4j.SessionWithContext, ctx context.Context) {
+		err := session.Close(ctx)
+		if err != nil {
+			log.Printf("Error closing session: %v", err)
+		}
+	}(session, ctx)
+
+	result, err := session.Run(ctx,
+		"MATCH (user:User {Id: $userID}) "+
+			"MATCH (followable:User) WHERE NOT (user)-[:FOLLOWS]->(followable) AND user <> followable "+
+			"RETURN followable.Id",
+		map[string]interface{}{"userID": userID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query to get followable users: %w", err)
+	}
+
+	var followable []*uint64
+	for result.Next(ctx) {
+		record := result.Record()
+		idValue, ok := record.Get("followable.Id")
+		if !ok {
+			return nil, errors.New("missing followable user ID in result")
+		}
+
+		idFloat, ok := idValue.(int64)
+		if !ok {
+			return nil, errors.New("followable user ID is not of type int64")
+		}
+
+		id := uint64(idFloat)
+		followable = append(followable, &id)
+	}
+
+	return followable, nil
 }

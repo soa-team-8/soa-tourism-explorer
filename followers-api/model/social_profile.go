@@ -6,9 +6,10 @@ import (
 )
 
 type SocialProfile struct {
-	UserID       uint64    `json:"userId,omitempty"`
-	FollowersIds []*uint64 `json:"followersIds,omitempty"`
-	FollowedIds  []*uint64 `json:"followedIds,omitempty"`
+	UserId     uint64  `json:"id,omitempty"`
+	Followers  []*User `json:"followers"`
+	Followed   []*User `json:"followed"`
+	Followable []*User `json:"followable"`
 }
 
 func (o *SocialProfile) FromJSON(r io.Reader) error {

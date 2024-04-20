@@ -47,13 +47,14 @@ func (handler *SocialProfileHandler) Follow(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = handler.service.Follow(followerID, followedID)
+	updatedProfile, err := handler.service.Follow(followerID, followedID)
 	if err != nil {
 		http.Error(rw, "Failed to follow user", http.StatusInternalServerError)
 		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(updatedProfile)
 }
 
 func (handler *SocialProfileHandler) Unfollow(rw http.ResponseWriter, r *http.Request) {
@@ -69,13 +70,36 @@ func (handler *SocialProfileHandler) Unfollow(rw http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = handler.service.Unfollow(followerID, followedID)
+	updatedProfile, err := handler.service.Unfollow(followerID, followedID)
 	if err != nil {
 		http.Error(rw, "Failed to unfollow user", http.StatusInternalServerError)
 		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(updatedProfile)
+}
+
+func (handler *SocialProfileHandler) GetProfile(rw http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.ParseUint(params["id"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	profile, err := handler.service.GetProfile(id)
+	if err != nil {
+		http.Error(rw, "Failed to get user", http.StatusInternalServerError)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(rw).Encode(profile)
+	if err != nil {
+		return
+	}
 }
 
 func (handler *SocialProfileHandler) MiddlewareContentTypeSet(next http.Handler) http.Handler {
