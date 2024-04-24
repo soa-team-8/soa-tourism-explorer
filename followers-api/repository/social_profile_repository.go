@@ -15,7 +15,7 @@ type SocialProfileRepository struct {
 }
 
 func NewSocialProfileRepository() (*SocialProfileRepository, error) {
-	uri := "bolt://localhost:7687"
+	uri := "bolt://followers_database:7687" //TODO: mrk
 	user := "neo4j"
 	pass := "followers"
 	auth := neo4j.BasicAuth(user, pass, "")
