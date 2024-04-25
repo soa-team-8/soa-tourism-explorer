@@ -7,6 +7,7 @@ import (
 	"followers/model"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
+	"os"
 	"strconv"
 )
 
@@ -15,13 +16,24 @@ type SocialProfileRepository struct {
 }
 
 func NewSocialProfileRepository() (*SocialProfileRepository, error) {
-	uri := "bolt://followers_database:7687" //TODO: mrk
+	uri := "bolt://localhost:7687"
+	if value, exists := os.LookupEnv("NEO4J_DB"); exists {
+		uri = value
+	}
 	user := "neo4j"
+	if value, exists := os.LookupEnv("NEO4J_USERNAME"); exists {
+		user = value
+	}
 	pass := "followers"
+	if value, exists := os.LookupEnv("NEO4J_PASS"); exists {
+		pass = value
+	}
 	auth := neo4j.BasicAuth(user, pass, "")
 
-	driver, _ := neo4j.NewDriverWithContext(uri, auth)
-
+	driver, err := neo4j.NewDriverWithContext(uri, auth)
+	if err != nil {
+		log.Fatalf("Failed to create Neo4j driver: %v", err)
+	}
 	return &SocialProfileRepository{
 		driver: driver,
 	}, nil
@@ -46,7 +58,7 @@ func (repo *SocialProfileRepository) CloseDriverConnection(ctx context.Context) 
 
 func (repo *SocialProfileRepository) WriteUser(user *model.User) error {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -88,29 +100,9 @@ func (repo *SocialProfileRepository) SaveUser(user *model.User) (bool, error) {
 	return false, nil
 }
 
-//	func (repo *SocialProfileRepository) Follow(userID, followedUserID uint64) error {
-//		ctx := context.Background()
-//		session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
-//		defer func(session neo4j.SessionWithContext, ctx context.Context) {
-//			err := session.Close(ctx)
-//			if err != nil {
-//				log.Printf("Error closing session: %v", err)
-//			}
-//		}(session, ctx)
-//
-//		_, err := session.Run(ctx,
-//			"MATCH (user:User {Id: $userID}), (followedUser:User {Id: $followedUserID}) "+
-//				"CREATE (user)-[:FOLLOWS]->(followedUser)",
-//			map[string]interface{}{"userID": userID, "followedUserID": followedUserID})
-//		if err != nil {
-//			return fmt.Errorf("failed to execute follow query: %w", err)
-//		}
-//
-//		return nil
-//	}
 func (repo *SocialProfileRepository) Follow(userID, followedUserID uint64) error {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -151,7 +143,7 @@ func (repo *SocialProfileRepository) Follow(userID, followedUserID uint64) error
 }
 func (repo *SocialProfileRepository) Unfollow(userID, followedUserID uint64) error {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -172,7 +164,7 @@ func (repo *SocialProfileRepository) Unfollow(userID, followedUserID uint64) err
 
 func (repo *SocialProfileRepository) GenerateIncrementalID() (uint64, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -206,7 +198,7 @@ func (repo *SocialProfileRepository) GenerateIncrementalID() (uint64, error) {
 
 func (repo *SocialProfileRepository) ReadUser(userId string) (model.User, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -250,7 +242,7 @@ func (repo *SocialProfileRepository) ReadUser(userId string) (model.User, error)
 
 func (repo *SocialProfileRepository) GetAllUsers(excludeID uint64) ([]*uint64, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -340,7 +332,7 @@ func (repo *SocialProfileRepository) GetSocialProfile(userID uint64) (*model.Soc
 
 func (repo *SocialProfileRepository) GetUsernameByID(userID uint64) (string, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -375,7 +367,7 @@ func (repo *SocialProfileRepository) GetUsernameByID(userID uint64) (string, err
 
 func (repo *SocialProfileRepository) GetFollowerIDs(userID uint64) ([]*uint64, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -412,7 +404,7 @@ func (repo *SocialProfileRepository) GetFollowerIDs(userID uint64) ([]*uint64, e
 
 func (repo *SocialProfileRepository) GetFollowedIDs(userID uint64) ([]*uint64, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
@@ -449,7 +441,7 @@ func (repo *SocialProfileRepository) GetFollowedIDs(userID uint64) ([]*uint64, e
 
 func (repo *SocialProfileRepository) GetFollowableIDs(userID uint64) ([]*uint64, error) {
 	ctx := context.Background()
-	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "followers"})
+	session := repo.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer func(session neo4j.SessionWithContext, ctx context.Context) {
 		err := session.Close(ctx)
 		if err != nil {
