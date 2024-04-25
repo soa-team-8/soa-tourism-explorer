@@ -28,10 +28,10 @@ func New(config Config) *App {
 		config: config,
 	}
 
-	if err := app.setupPostgres(); err != nil {
+	/*if err := app.setupPostgres(); err != nil {
 		fmt.Println("Failed to setup PostgreSQL:", err)
 		return nil
-	}
+	}*/
 
 	if err := app.setupMongoDB(); err != nil {
 		fmt.Println("Failed to setup MongoDB:", err)

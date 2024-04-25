@@ -32,7 +32,7 @@ services:
     depends_on:
       - encounters_database
     environment:
-      POSTGRES_ADDR: "postgres://postgres:root@encounters_database:5432/encounters"
+      MONGODB_ADDR: "mongodb://encounters_database:27017"
       SERVER_PORT: 3030
 
   tours_database:
@@ -50,18 +50,29 @@ services:
       - tours_database_data:/var/lib/postgresql/data
 
   encounters_database:
-    image: postgres
-    container_name: encounters_db_container
+    image: mongo
+    container_name: encounters_db_container  # Promenjeno ime kontejnera
     restart: always
     networks:
       - services_network
     ports:
-      - "5433:5432"
-    environment:
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: encounters
+      - "27017:27017"  # MongoDB port
     volumes:
-      - encounters_database_data:/var/lib/postgresql/data
+      - encounters_database_data:/data/db  # MongoDB podaci
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo_express_container
+    restart: always
+    networks:
+      - services_network
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: "encounters_database"  # Povezano sa MongoDB kontejnerom
+      ME_CONFIG_MONGODB_PORT: "27017"
+    depends_on:
+      - encounters_database
 
 volumes:
   tours_database_data:
