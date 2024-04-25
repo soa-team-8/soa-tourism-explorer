@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,15 +20,36 @@ func (e *HttpUtils) Decode(body io.Reader, v interface{}) (interface{}, error) {
 	return v, err
 }
 
-func (e *HttpUtils) GetIDFromRequest(req *http.Request, paramName string) (uint64, error) {
+func (e *HttpUtils) GetUInt64FromRequest(req *http.Request, paramName string) (uint64, error) {
 	vars := mux.Vars(req)
 	paramValueStr := vars[paramName]
 	return strconv.ParseUint(paramValueStr, 10, 64)
 }
 
+func (e *HttpUtils) GetIntFromRequest(req *http.Request, paramName string) (int, error) {
+	vars := mux.Vars(req)
+	paramValueStr := vars[paramName]
+	return strconv.Atoi(paramValueStr)
+}
+
 func (e *HttpUtils) GetDoubleFromForm(req *http.Request, paramName string) (float64, error) {
 	paramValueStr := req.FormValue(paramName)
 	return strconv.ParseFloat(paramValueStr, 64)
+}
+
+func (e *HttpUtils) GetIntFromForm(req *http.Request, paramName string) (int, error) {
+	paramValueStr := req.FormValue(paramName)
+	return strconv.Atoi(paramValueStr)
+}
+
+func (e *HttpUtils) GetObjectFromForm(req *http.Request, paramName string, obj interface{}) error {
+	jsonData := req.FormValue(paramName)
+
+	if err := json.NewDecoder(strings.NewReader(jsonData)).Decode(obj); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (e *HttpUtils) GetUint64SliceFromForm(req *http.Request, paramName string) ([]uint64, error) {
@@ -47,6 +70,15 @@ func (e *HttpUtils) GetUint64SliceFromForm(req *http.Request, paramName string) 
 	return uint64Slice, nil
 }
 
+func (e *HttpUtils) GetFilesFromForm(req *http.Request, paramName string) ([]*multipart.FileHeader, error) {
+	files, ok := req.MultipartForm.File[paramName]
+	if !ok {
+		return nil, fmt.Errorf("no files found for parameter %s", paramName)
+	}
+
+	return files, nil
+}
+
 func (e *HttpUtils) HandleError(resp http.ResponseWriter, err error, statusCode int) {
 	http.Error(resp, fmt.Sprintf("Error: %v", err), statusCode)
 }
@@ -54,12 +86,18 @@ func (e *HttpUtils) HandleError(resp http.ResponseWriter, err error, statusCode 
 func (e *HttpUtils) WriteJSONResponse(resp http.ResponseWriter, statusCode int, data interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(statusCode)
-	json.NewEncoder(resp).Encode(data)
+	if err := json.NewEncoder(resp).Encode(data); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+		http.Error(resp, "Error encoding JSON response", http.StatusInternalServerError)
+	}
 }
 
 func (e *HttpUtils) WriteResponse(resp http.ResponseWriter, statusCode int, message string) {
 	resp.WriteHeader(statusCode)
-	resp.Write([]byte(message))
+	_, err := resp.Write([]byte(message))
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func (e *HttpUtils) GetDoubleFromQuery(req *http.Request, paramName string) (float64, error) {
@@ -75,10 +113,8 @@ func (e *HttpUtils) GetUint64SliceFromQuery(req *http.Request, paramName string)
 
 	var uint64Slice []uint64
 	for _, paramValue := range paramValues {
-		// Split the paramValue based on ','
 		values := strings.Split(paramValue, ",")
 		for _, val := range values {
-			// Parse each element as uint64
 			uintVal, err := strconv.ParseUint(val, 10, 64)
 			if err != nil {
 				return nil, fmt.Errorf("error parsing parameter %s: %v", paramName, err)

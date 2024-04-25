@@ -1,4 +1,4 @@
-package repo
+package postgreSQL
 
 import (
 	"encounters/model"
@@ -34,7 +34,7 @@ func (r *SocialEncounterRepository) Save(socialEncounter model.SocialEncounter) 
 	return socialEncounter, nil
 }
 
-func (r *SocialEncounterRepository) FindById(id uint64) (*model.SocialEncounter, error) {
+func (r *SocialEncounterRepository) FindByID(id uint64) (*model.SocialEncounter, error) {
 	socialEncounter := &model.SocialEncounter{}
 
 	// Preload the Encounter data
@@ -47,20 +47,20 @@ func (r *SocialEncounterRepository) FindById(id uint64) (*model.SocialEncounter,
 
 func (r *SocialEncounterRepository) Update(socialEncounter model.SocialEncounter) (model.SocialEncounter, error) {
 	// Assuming r.Db is a valid GORM DB connection
-	result := r.Db.Model(&model.SocialEncounter{}).Where("encounter_id = ?", socialEncounter.EncounterID).Updates(&socialEncounter)
+	result := r.Db.Model(&model.SocialEncounter{}).Where("id = ?", socialEncounter.ID).Updates(&socialEncounter)
 
 	if result.Error != nil {
 		return model.SocialEncounter{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return model.SocialEncounter{}, fmt.Errorf("social encounter with ID %d does not exist", socialEncounter.EncounterID)
+		return model.SocialEncounter{}, fmt.Errorf("social encounter with ID %d does not exist", socialEncounter.ID)
 	}
 
 	return socialEncounter, nil
 }
 
-func (r *SocialEncounterRepository) DeleteById(id uint64) error {
+func (r *SocialEncounterRepository) DeleteByID(id uint64) error {
 	// Start a transaction
 	tx := r.Db.Begin()
 
@@ -71,7 +71,7 @@ func (r *SocialEncounterRepository) DeleteById(id uint64) error {
 		return err
 	}
 
-	if err := tx.Delete(&model.Encounter{}, socialEncounter.EncounterID).Error; err != nil {
+	if err := tx.Delete(&model.Encounter{}, socialEncounter.ID).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -1,8 +1,7 @@
-package repo
+package postgreSQL
 
 import (
 	"encounters/model"
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -63,25 +62,6 @@ func (r *EncounterRepository) Update(encounter model.Encounter) (model.Encounter
 	}
 
 	return encounter, nil
-}
-
-func (r *EncounterRepository) MakeEncounterPublished(id uint64) (*model.Encounter, error) {
-	encounterToUpdate := &model.Encounter{}
-	err := r.DB.First(encounterToUpdate, id).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("Not found %d", id)
-		}
-		return nil, err
-	}
-
-	encounterToUpdate.MakeEncounterPublished()
-	err = r.DB.Save(encounterToUpdate).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return encounterToUpdate, nil
 }
 
 func (r *EncounterRepository) FindByIds(ids []uint64) ([]model.Encounter, error) {

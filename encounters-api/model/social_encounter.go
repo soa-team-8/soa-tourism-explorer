@@ -68,8 +68,8 @@ func (b BigIntSlice) Value() (driver.Value, error) {
 }
 
 type SocialEncounter struct {
-	EncounterID       uint64 `gorm:"primaryKey;autoIncrement"`
-	Encounter         Encounter
+	ID                uint64      `gorm:"primaryKey;autoIncrement"`
+	Encounter         Encounter   `gorm:"-"`
 	RequiredPeople    int         `json:"required_people"`
 	Range             float64     `json:"range"`
 	ActiveTouristsIds BigIntSlice `json:"active_tourists_ids,omitempty" gorm:"type:bigint[]"`

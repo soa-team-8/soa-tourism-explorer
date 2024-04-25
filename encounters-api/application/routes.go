@@ -2,6 +2,7 @@ package application
 
 import (
 	"encounters/handler"
+	"encounters/repo/mongoDB"
 	"encounters/service"
 
 	"fmt"
@@ -38,7 +39,7 @@ func (a *App) loadRoutes() {
 }
 
 func (a *App) loadEncounterRoutes(router *mux.Router) {
-	encounterService := service.NewEncounterService(a.db)
+	encounterService := a.createEncounterService()
 	encounterHandler := handler.NewEncounterHandler(encounterService)
 
 	router.HandleFunc("", encounterHandler.Create).Methods("POST")
@@ -46,26 +47,26 @@ func (a *App) loadEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", encounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", encounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", encounterHandler.DeleteByID).Methods("DELETE")
-	router.HandleFunc("/tourist/{level}/{userId}", encounterHandler.CreateTouristEncounter).Methods("POST")
-	router.HandleFunc("/author", encounterHandler.CreateAuthorEncounter).Methods("POST")
+	router.HandleFunc("/tourist/{level}/{userId}", encounterHandler.CreateByTourist).Methods("POST")
+	router.HandleFunc("/author", encounterHandler.CreateByAuthor).Methods("POST")
 }
 
 func (a *App) loadEncounterRequestRoutes(router *mux.Router) {
-	encounterRequestService := service.NewEncounterRequestService(a.db)
+	encounterRequestService := a.createEncounterRequestService()
 	encounterRequestHandler := handler.NewEncounterRequestHandler(encounterRequestService)
 
 	router.HandleFunc("/create", encounterRequestHandler.CreateRequest).Methods("POST")
 	router.HandleFunc("/get/{id}", encounterRequestHandler.GetRequestByID).Methods("GET")
 	router.HandleFunc("/update", encounterRequestHandler.UpdateRequest).Methods("PUT")
 	router.HandleFunc("/delete/{id}", encounterRequestHandler.DeleteRequest).Methods("DELETE")
-	router.HandleFunc("/acceptReq/{id}", encounterRequestHandler.AcceptRequest).Methods("PUT")
-	router.HandleFunc("/rejectReq/{id}", encounterRequestHandler.RejectRequest).Methods("PUT")
+	router.HandleFunc("/acceptReq/{id}", encounterRequestHandler.Accept).Methods("PUT")
+	router.HandleFunc("/rejectReq/{id}", encounterRequestHandler.Reject).Methods("PUT")
 	router.HandleFunc("/getAll", encounterRequestHandler.GetAllRequests).Methods("GET")
 }
 
 func (a *App) loadExecutionRoutes(router *mux.Router) {
-	executionService := service.NewEncounterExecutionService(a.db)
-	encounterService := service.NewEncounterService(a.db)
+	executionService := a.createEncounterExecutionService()
+	encounterService := a.createEncounterService()
 	executionHandler := handler.NewEncounterExecutionHandler(executionService, encounterService)
 
 	router.HandleFunc("/{touristId}", executionHandler.Create).Methods("POST")
@@ -89,7 +90,7 @@ func (a *App) loadExecutionRoutes(router *mux.Router) {
 }
 
 func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
-	socialEncounterService := service.NewSocialEncounterService(a.db)
+	socialEncounterService := service.NewSocialEncounterService(a.postgresDB)
 	socialEncounterHandler := handler.NewSocialEncounterHandler(socialEncounterService)
 
 	router.HandleFunc("", socialEncounterHandler.Create).Methods("POST")
@@ -100,7 +101,7 @@ func (a *App) loadSocialEncounterRoutes(router *mux.Router) {
 }
 
 func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
-	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.db)
+	hiddenLocationEncounterService := service.NewHiddenLocationEncounterService(a.postgresDB)
 	hiddenLocationEncounterHandler := handler.NewHiddenLocationEncounterHandler(hiddenLocationEncounterService)
 
 	router.HandleFunc("", hiddenLocationEncounterHandler.Create).Methods("POST")
@@ -108,6 +109,28 @@ func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
 	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.GetByID).Methods("GET")
 	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.UpdateByID).Methods("PUT")
 	router.HandleFunc("/{id}", hiddenLocationEncounterHandler.DeleteByID).Methods("DELETE")
+}
+
+func (a *App) createEncounterService() *service.EncounterService {
+	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
+	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
+	return service.NewEncounterService(encounterRepository, encounterRequestRepository, socialEncounterRepository, locationEncounterRepository)
+}
+
+func (a *App) createEncounterRequestService() *service.EncounterRequestService {
+	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
+	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
+	return service.NewEncounterRequestService(encounterRequestRepository, encounterRepository)
+}
+
+func (a *App) createEncounterExecutionService() *service.EncounterExecutionService {
+	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
+	executionRepository := mongoDB.NewEncounterExecutionRepository(a.mongoClient)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
+	return service.NewEncounterExecutionService(executionRepository, encounterRepository, socialEncounterRepository, locationEncounterRepository)
 }
 
 func (a *App) serveImage(resp http.ResponseWriter, req *http.Request) {

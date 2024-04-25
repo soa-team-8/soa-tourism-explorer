@@ -2,18 +2,18 @@ package service
 
 import (
 	"encounters/dto"
-	"encounters/repo"
+	"encounters/repo/postgreSQL"
 	"fmt"
 	"gorm.io/gorm"
 )
 
 type SocialEncounterService struct {
-	SocialEncounterRepo *repo.SocialEncounterRepository
+	SocialEncounterRepo *postgreSQL.SocialEncounterRepository
 }
 
 func NewSocialEncounterService(db *gorm.DB) *SocialEncounterService {
 	return &SocialEncounterService{
-		SocialEncounterRepo: &repo.SocialEncounterRepository{
+		SocialEncounterRepo: &postgreSQL.SocialEncounterRepository{
 			Db: db,
 		},
 	}
@@ -33,7 +33,7 @@ func (service *SocialEncounterService) Create(encounterDto dto.EncounterDto) (dt
 }
 
 func (service *SocialEncounterService) GetByID(id uint64) (*dto.EncounterDto, error) {
-	encounter, err := service.SocialEncounterRepo.FindById(id)
+	encounter, err := service.SocialEncounterRepo.FindByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter with ID %d not found", id)
 	}
@@ -53,7 +53,7 @@ func (service *SocialEncounterService) GetAll() ([]dto.EncounterDto, error) {
 }
 
 func (service *SocialEncounterService) DeleteByID(id uint64) error {
-	err := service.SocialEncounterRepo.DeleteById(id)
+	err := service.SocialEncounterRepo.DeleteByID(id)
 	if err != nil {
 		return fmt.Errorf("encounter cannot be deleted: %v", err)
 	}

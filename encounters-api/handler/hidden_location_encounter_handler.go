@@ -65,7 +65,7 @@ func (s *HiddenLocationEncounterHandler) GetAll(resp http.ResponseWriter, req *h
 }
 
 func (s *HiddenLocationEncounterHandler) GetByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req, "id")
+	id, err := s.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -81,7 +81,7 @@ func (s *HiddenLocationEncounterHandler) GetByID(resp http.ResponseWriter, req *
 }
 
 func (s *HiddenLocationEncounterHandler) UpdateByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req, "id")
+	id, err := s.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
@@ -105,7 +105,7 @@ func (s *HiddenLocationEncounterHandler) UpdateByID(resp http.ResponseWriter, re
 }
 
 func (s *HiddenLocationEncounterHandler) DeleteByID(resp http.ResponseWriter, req *http.Request) {
-	id, err := s.GetIDFromRequest(req, "id")
+	id, err := s.GetUInt64FromRequest(req, "id")
 	if err != nil {
 		s.HandleError(resp, err, http.StatusBadRequest)
 		return
