@@ -129,15 +129,16 @@ func (e *EncounterHandler) CreateByTourist(resp http.ResponseWriter, req *http.R
 		return
 	}
 
-	images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
-		return
-	}
-
-	err = e.uploadImages(resp, newEncounterDto, images)
-	if err != nil {
-		return
+	if newEncounterDto.Type == "Locaton" {
+		images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
+		if err != nil {
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+			return
+		}
+		err = e.uploadImages(resp, newEncounterDto, images)
+		if err != nil {
+			return
+		}
 	}
 
 	if newEncounterDto.ActiveTouristsIDs == nil {
@@ -160,18 +161,17 @@ func (e *EncounterHandler) CreateByAuthor(resp http.ResponseWriter, req *http.Re
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
-
-	images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
-	if err != nil {
-		e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
-		return
+	if newEncounterDto.Type == "Locaton" {
+		images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
+		if err != nil {
+			e.HttpUtils.HandleError(resp, err, http.StatusInternalServerError)
+			return
+		}
+		err = e.uploadImages(resp, newEncounterDto, images)
+		if err != nil {
+			return
+		}
 	}
-
-	err = e.uploadImages(resp, newEncounterDto, images)
-	if err != nil {
-		return
-	}
-
 	if newEncounterDto.ActiveTouristsIDs == nil {
 		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
 	}
