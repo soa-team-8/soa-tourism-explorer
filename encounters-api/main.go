@@ -6,6 +6,7 @@ import (
 	"encounters/dto"
 	"encounters/model"
 	"encounters/proto/encounters"
+	"encounters/proto/tourist_encounters"
 	"encounters/repo/mongoDB"
 	"encounters/service"
 	"fmt"
@@ -18,8 +19,6 @@ import (
 	"os"
 	"os/signal"
 )
-
-//var EncounterService *service.EncounterService
 
 func main() {
 	app := application.New(application.LoadConfig())
@@ -38,6 +37,7 @@ func main() {
 	grpcServer := grpc.NewServer(opts...)
 
 	encounters.RegisterEncounterServiceServer(grpcServer, Server{EncounterService: createEncounterService(mongoClient)})
+	tourist_encounters.RegisterTouristEncounterServiceServer(grpcServer, Server{EncounterService: createEncounterService(mongoClient)})
 
 	reflection.Register(grpcServer)
 	grpcServer.Serve(lis)
@@ -53,6 +53,8 @@ func main() {
 
 type Server struct {
 	encounters.UnimplementedEncounterServiceServer
+	tourist_encounters.UnimplementedTouristEncounterServiceServer
+
 	EncounterService *service.EncounterService
 }
 
@@ -200,6 +202,110 @@ func (s Server) GetEncounter(ctx context.Context, request *encounters.GetEncount
 	}
 
 	return response, nil
+}
+
+func (s Server) TouristCreateEncounter(ctx context.Context, request *tourist_encounters.TouristCreateEncounterRequest) (*tourist_encounters.TouristCreateEncounterResponse, error) {
+	encounterDto := request.GetEncounter()
+	level := 11
+	var userId uint64 = 1
+
+	images := pq.StringArray{encounterDto.Image}
+	requiredPeople := int(encounterDto.RequiredPeople)
+	activeTouristsIDsBigSlice := toBigIntSlice(encounterDto.ActiveTouristsIds)
+
+	_, err := s.EncounterService.CreateByTourist(dto.EncounterDto{
+		AuthorID:          uint64(encounterDto.AuthorId),
+		ID:                uint64(encounterDto.Id),
+		Name:              encounterDto.Name,
+		Description:       encounterDto.Description,
+		XP:                encounterDto.XP,
+		Status:            encounterDto.Status,
+		Type:              encounterDto.Type,
+		Longitude:         float64(encounterDto.Longitude),
+		Latitude:          float64(encounterDto.Latitude),
+		LocationLatitude:  &encounterDto.LocationLatitude,
+		LocationLongitude: &encounterDto.LocationLongitude,
+		Image:             images,
+		Range:             &encounterDto.Range,
+		RequiredPeople:    &requiredPeople,
+		ActiveTouristsIDs: activeTouristsIDsBigSlice,
+	}, level, userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &tourist_encounters.TouristCreateEncounterResponse{
+		Encounter: encounterDto,
+	}
+
+	return response, nil
+}
+
+func (s Server) TouristGetAllEncounters(ctx context.Context, request *tourist_encounters.TouristGetAllEncountersRequest) (*tourist_encounters.TouristGetAllEncountersResponse, error) {
+	encounters, err := s.EncounterService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var responseEncounters []*tourist_encounters.TouristEncounter
+
+	for _, foundedEncounter := range encounters {
+		var activeTouristsIDs []int32
+		var locationLongitude float64
+		var locationLatitude float64
+		var inRange float64
+		var image string
+		var requiredPeople int32
+
+		if foundedEncounter.LocationLongitude != nil {
+			locationLongitude = *foundedEncounter.LocationLongitude
+		}
+
+		if foundedEncounter.LocationLatitude != nil {
+			locationLatitude = *foundedEncounter.LocationLatitude
+		}
+
+		if foundedEncounter.Range != nil {
+			inRange = *foundedEncounter.Range
+		}
+
+		if foundedEncounter.Image != nil && len(foundedEncounter.Image) > 0 {
+			image = foundedEncounter.Image[0]
+		}
+
+		if foundedEncounter.RequiredPeople != nil {
+			requiredPeople = int32(*foundedEncounter.RequiredPeople)
+		}
+
+		if foundedEncounter.ActiveTouristsIDs != nil {
+			for _, id := range *foundedEncounter.ActiveTouristsIDs {
+				activeTouristsIDs = append(activeTouristsIDs, int32(id))
+			}
+		}
+
+		encounter := &tourist_encounters.TouristEncounter{
+			AuthorId:          int64(foundedEncounter.AuthorID),
+			Id:                int64(foundedEncounter.ID),
+			Name:              foundedEncounter.Name,
+			Description:       foundedEncounter.Description,
+			XP:                int32(foundedEncounter.XP),
+			Status:            foundedEncounter.Status,
+			Type:              foundedEncounter.Type,
+			Longitude:         float32(foundedEncounter.Longitude),
+			Latitude:          float32(foundedEncounter.Latitude),
+			LocationLongitude: locationLongitude,
+			LocationLatitude:  locationLatitude,
+			Image:             image,
+			Range:             inRange,
+			RequiredPeople:    requiredPeople,
+			ActiveTouristsIds: activeTouristsIDs,
+		}
+
+		responseEncounters = append(responseEncounters, encounter)
+	}
+
+	return &tourist_encounters.TouristGetAllEncountersResponse{Encounters: responseEncounters}, nil
 }
 
 func toBigIntSlice(ids []int32) *model.BigIntSlice {
