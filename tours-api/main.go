@@ -189,6 +189,120 @@ func (s *Server) CreateTour(ctx context.Context, in *tours.TourDto) (*tours.Acti
 	return &tours.ActionResponse{Succes: true}, nil
 }
 
+func (s *Server) UpdateTour(ctx context.Context, in *tours.UpdateTourRequest) (*tours.ActionResponse, error) {
+	// Prvo mapirajte osnovne informacije
+	var dem model.DemandignessLevel
+	if in.Tour.GetDemandingnessLevel() == "Easy" {
+		dem = model.Easy
+	} else if in.Tour.GetDemandingnessLevel() == "Medium" {
+		dem = model.Medium
+	} else if in.Tour.GetDemandingnessLevel() == "Hard" {
+		dem = model.Hard
+	}
+
+	var status model.Status
+	if in.Tour.GetStatus() == "Draft" {
+		status = model.Draft
+	} else if in.Tour.GetStatus() == "Published" {
+		status = model.Published
+	} else if in.Tour.GetStatus() == "Archived" {
+		status = model.Archived
+	}
+
+	tour := &model.Tour{
+		ID:                uint64(in.GetId()),
+		AuthorID:          uint64(in.Tour.GetAuthorId()),
+		Name:              in.Tour.GetName(),
+		Description:       in.Tour.GetDescription(),
+		DemandignessLevel: dem,
+		Status:            status,
+		Price:             in.Tour.GetPrice(),
+		Tags:              in.Tour.GetTags(),
+		Closed:            in.Tour.GetClosed(),
+	}
+
+	// Mapirajte opremu (equipment)
+	var equipment []model.Equipment
+	for _, equipmentDto := range in.Tour.GetEquipment() {
+		equipment = append(equipment, model.Equipment{
+			ID:          uint64(equipmentDto.GetId()),
+			Name:        equipmentDto.GetName(),
+			Description: equipmentDto.GetDescription(),
+		})
+	}
+	tour.Equipment = equipment
+
+	// Mapirajte checkpointe
+	var checkpoints []model.Checkpoint
+	for _, checkpointDto := range in.Tour.GetCheckpoints() {
+		checkpoint := model.Checkpoint{
+			ID:                    uint64(checkpointDto.GetId()),
+			TourID:                uint64(checkpointDto.GetTourId()),
+			AuthorID:              uint64(checkpointDto.GetAuthorId()),
+			Longitude:             checkpointDto.GetLongitude(),
+			Latitude:              checkpointDto.GetLatitude(),
+			Name:                  checkpointDto.GetName(),
+			Description:           checkpointDto.GetDescription(),
+			Pictures:              checkpointDto.GetPictures(),
+			RequiredTimeInSeconds: checkpointDto.GetRequiredTimeInSeconds(),
+			EncounterID:           uint64(checkpointDto.GetEncounterId()),
+			IsSecretPrerequisite:  checkpointDto.GetIsSecretPrerequisite(),
+		}
+		// Mapiranje CheckpointSecretDto
+		checkpointSecretDto := checkpointDto.GetCheckpointSecret()
+		checkpointSecret := model.CheckpointSecret{
+			Description: checkpointSecretDto.GetDescription(),
+			Pictures:    checkpointSecretDto.GetPictures(),
+		}
+		checkpoint.CheckpointSecret = checkpointSecret
+
+		checkpoints = append(checkpoints, checkpoint)
+	}
+	tour.Checkpoints = checkpoints
+
+	// Mapirajte published ture
+	var publishedTours []model.PublishedTour
+	for _, publishedTourDto := range in.Tour.GetPublishedTours() {
+		publishedTour := model.PublishedTour{
+			PublishingDate: time.Unix(publishedTourDto.GetPublishingDate().GetSeconds(), int64(publishedTourDto.GetPublishingDate().GetNanos())),
+		}
+		publishedTours = append(publishedTours, publishedTour)
+	}
+	tour.PublishedTours = publishedTours
+
+	// Mapirajte archived ture
+	var archivedTours []model.ArchivedTour
+	for _, archivedTourDto := range in.Tour.GetArchivedTours() {
+		archivedTour := model.ArchivedTour{
+			ArchivingDate: time.Unix(archivedTourDto.GetArchivingDate().GetSeconds(), int64(archivedTourDto.GetArchivingDate().GetNanos())),
+		}
+		archivedTours = append(archivedTours, archivedTour)
+	}
+	tour.ArchivedTours = archivedTours
+	tour.ID = uint64(in.GetId())
+	s.TourService.Update(*tour)
+
+	// Vratite odgovor sa statusom uspeha
+	return &tours.ActionResponse{Succes: true}, nil
+}
+
+func (s *Server) PublishTour(ctx context.Context, in *tours.PublishTourRequest) (*tours.ActionResponse, error) {
+	tourToPublish, _ := s.TourService.GetByID(uint64(in.Id))
+
+	if len(tourToPublish.Checkpoints) >= 2 {
+		tourToPublish.Status = 1
+		s.TourService.Update(*tourToPublish)
+	}
+
+	return &tours.ActionResponse{Succes: true}, nil
+}
+
+func (s *Server) DeleteTour(ctx context.Context, in *tours.DeleteTourRequest) (*tours.ActionResponse, error) {
+	tourID := uint64(in.GetId())
+	s.TourService.Delete(tourID)
+	return &tours.ActionResponse{Succes: true}, nil
+}
+
 func (s *Server) GetAllTours(ctx context.Context, in *tours.GetAllToursRequest) (*tours.ListTourDtoResponse, error) {
 	var toursReal []model.Tour
 	toursReal, _ = s.TourService.GetAll()
@@ -283,6 +397,40 @@ func (s *Server) CreateCheckpoint(ctx context.Context, in *checkpoints.CreateChe
 
 	// Pozovite funkciju koja će dodati checkpoint u bazu podataka
 	_, err := s.CheckpointService.Create(checkpoint)
+	if err != nil {
+		// U slučaju greške, vratite odgovarajući odgovor sa greškom
+		return nil, err
+	}
+
+	// Vratite odgovor sa kreiranim checkpoint-om
+	return in.Checkpoint, nil
+}
+
+func (s *Server) UpdateCheckpoint(ctx context.Context, in *checkpoints.UpdateCheckpointRequest) (*checkpoints.CheckpointDto2, error) {
+	// Prvo mapirajte osnovne informacije
+	checkpoint := model.Checkpoint{
+		TourID:                uint64(in.GetCheckpoint().GetTourId()),
+		AuthorID:              uint64(in.GetCheckpoint().GetAuthorId()),
+		Longitude:             in.GetCheckpoint().GetLongitude(),
+		Latitude:              in.GetCheckpoint().GetLatitude(),
+		Name:                  in.GetCheckpoint().GetName(),
+		Description:           in.GetCheckpoint().GetDescription(),
+		Pictures:              in.GetCheckpoint().GetPictures(),
+		RequiredTimeInSeconds: in.GetCheckpoint().GetRequiredTimeInSeconds(),
+		EncounterID:           uint64(in.GetCheckpoint().GetEncounterId()),
+		IsSecretPrerequisite:  in.GetCheckpoint().GetIsSecretPrerequisite(),
+	}
+
+	// Mapiranje CheckpointSecretDto
+	checkpointSecretDto := in.GetCheckpoint().GetCheckpointSecret()
+	checkpointSecret := model.CheckpointSecret{
+		Description: checkpointSecretDto.GetDescription(),
+		Pictures:    checkpointSecretDto.GetPictures(),
+	}
+	checkpoint.CheckpointSecret = checkpointSecret
+	checkpoint.ID = uint64(in.GetId())
+
+	err := s.CheckpointService.Update(checkpoint)
 	if err != nil {
 		// U slučaju greške, vratite odgovarajući odgovor sa greškom
 		return nil, err
