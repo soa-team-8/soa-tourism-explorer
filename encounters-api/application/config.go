@@ -26,9 +26,9 @@ func LoadConfig() Config {
 	if mongoAddr, exists := os.LookupEnv("MONGODB_ADDR"); exists {
 		cfg.MongoDBAddress = mongoAddr
 	} else {
-		log.Println("MONGODB_ADDR nije postavljena. Koristi se podrazumevana vrednost.")
+		log.Println("MONGODB_ADDR not set. Used default mongoDB port.")
 	}
-	log.Println("Vrednost MONGODB_ADDR:", cfg.MongoDBAddress)
+	log.Println("Default MONGODB_ADDR:", cfg.MongoDBAddress)
 
 	if serverPort, exists := os.LookupEnv("SERVER_PORT"); exists {
 		if port, err := strconv.ParseUint(serverPort, 10, 16); err == nil {

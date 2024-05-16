@@ -161,7 +161,6 @@ func (e *EncounterHandler) CreateByAuthor(resp http.ResponseWriter, req *http.Re
 		e.HttpUtils.HandleError(resp, err, http.StatusBadRequest)
 		return
 	}
-
 	if newEncounterDto.Type == "Locaton" {
 		images, err := e.HttpUtils.GetFilesFromForm(req, "pictures")
 		if err != nil {
@@ -173,7 +172,6 @@ func (e *EncounterHandler) CreateByAuthor(resp http.ResponseWriter, req *http.Re
 			return
 		}
 	}
-
 	if newEncounterDto.ActiveTouristsIDs == nil {
 		newEncounterDto.ActiveTouristsIDs = &model.BigIntSlice{}
 	}

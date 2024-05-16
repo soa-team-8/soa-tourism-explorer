@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"followers/model"
+	"followers-api/model"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 	"os"

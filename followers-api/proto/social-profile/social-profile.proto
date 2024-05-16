@@ -1,0 +1,72 @@
+﻿syntax = "proto3";
+
+option go_package = "proto/social_profile";
+
+service SocialProfileService {
+  rpc Follow(FollowRequest) returns (FollowResponse) {}
+
+  rpc UnFollow(UnFollowRequest) returns (UnFollowResponse) {}
+
+  rpc GetSocialProfile(GetSocialProfileRequest) returns (GetSocialProfileResponse) {}
+
+  rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse) {}
+}
+
+message UserDto {
+  int32 id = 1;
+  string username = 2;
+  string password = 3;
+  RoleUser role = 4;
+  bool is_active = 5;
+  string email = 6;
+  string verification_token = 7;
+  bool is_verified = 8;
+}
+
+enum RoleUser {
+  Administrator = 0;
+  Author = 1;
+  Tourist = 2;
+}
+
+message SocialProfileDto {
+  int32 id = 1;
+  repeated UserDto followers = 2;
+  repeated UserDto followed = 3;
+  repeated UserDto followable = 4;
+}
+
+message FollowRequest {
+  int32 follower_id = 1;
+  int32 followed_id = 2;
+}
+
+message FollowResponse {
+  SocialProfileDto social_profile = 1;
+}
+
+message UnFollowRequest {
+  int32 follower_id = 1;
+  int32 unfollowed_id = 2;
+}
+
+message UnFollowResponse {
+  SocialProfileDto social_profile = 1;
+}
+
+message GetSocialProfileRequest {
+  int32 user_id = 1;
+}
+
+message GetSocialProfileResponse {
+  SocialProfileDto social_profile = 1;
+}
+
+message GetRecommendationsRequest {
+  int32 user_id = 1;
+}
+
+message GetRecommendationsResponse {
+  repeated UserDto recommendations = 1;
+}
+

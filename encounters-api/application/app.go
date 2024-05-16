@@ -19,7 +19,7 @@ import (
 type App struct {
 	router      http.Handler
 	postgresDB  *gorm.DB
-	mongoClient *mongo.Client
+	MongoClient *mongo.Client
 	config      Config
 }
 
@@ -76,7 +76,7 @@ func (a *App) setupMongoDB() error {
 		return err
 	}
 
-	a.mongoClient = mongoClient
+	a.MongoClient = mongoClient
 	return nil
 }
 

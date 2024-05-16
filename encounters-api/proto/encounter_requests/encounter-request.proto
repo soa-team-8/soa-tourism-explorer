@@ -1,0 +1,46 @@
+﻿syntax = "proto3";
+
+option go_package = "proto/encounter_requests";
+
+
+service EncounterRequestService {
+  rpc CreateEncounterRequest(CreateEncounterRequestDto) returns (EncounterRequestResponseDto) { }
+
+  rpc GetAllEncounterRequests(GetAllEncounterRequestsRequest) returns (GetAllEncounterRequestsResponse) { }
+
+  rpc AcceptEncounterRequest(AcceptEncounterRequestDto) returns (EncounterRequestResponseDto) { }
+
+  rpc RejectEncounterRequest(RejectEncounterRequestDto) returns (EncounterRequestResponseDto) { }
+}
+
+message EncounterRequestDto {
+  int32 id = 1;
+  int64 tourist_id = 2;
+  int64 encounter_id = 3;
+  string status = 4;
+}
+
+message CreateEncounterRequestDto {
+  EncounterRequestDto encounter_request = 1;
+}
+
+message AcceptEncounterRequestDto {
+  int32 id = 1;
+}
+
+message RejectEncounterRequestDto {
+  int32 id = 1;
+}
+
+message GetAllEncounterRequestsResponse {
+  repeated EncounterRequestDto encounter_requests = 1;
+}
+
+message GetAllEncounterRequestsRequest {
+  repeated EncounterRequestDto encounter_requests = 1;
+}
+
+message EncounterRequestResponseDto {
+  EncounterRequestDto encounter_request = 1;
+}
+

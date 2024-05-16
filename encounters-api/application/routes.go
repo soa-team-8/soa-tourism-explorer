@@ -112,24 +112,24 @@ func (a *App) loadHiddenLocationEncounterRoutes(router *mux.Router) {
 }
 
 func (a *App) createEncounterService() *service.EncounterService {
-	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
-	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
-	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
-	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
+	encounterRepository := mongoDB.NewEncounterRepository(a.MongoClient)
+	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.MongoClient)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.MongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.MongoClient)
 	return service.NewEncounterService(encounterRepository, encounterRequestRepository, socialEncounterRepository, locationEncounterRepository)
 }
 
 func (a *App) createEncounterRequestService() *service.EncounterRequestService {
-	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.mongoClient)
-	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
+	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(a.MongoClient)
+	encounterRepository := mongoDB.NewEncounterRepository(a.MongoClient)
 	return service.NewEncounterRequestService(encounterRequestRepository, encounterRepository)
 }
 
 func (a *App) createEncounterExecutionService() *service.EncounterExecutionService {
-	encounterRepository := mongoDB.NewEncounterRepository(a.mongoClient)
-	executionRepository := mongoDB.NewEncounterExecutionRepository(a.mongoClient)
-	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.mongoClient)
-	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.mongoClient)
+	encounterRepository := mongoDB.NewEncounterRepository(a.MongoClient)
+	executionRepository := mongoDB.NewEncounterExecutionRepository(a.MongoClient)
+	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(a.MongoClient)
+	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(a.MongoClient)
 	return service.NewEncounterExecutionService(executionRepository, encounterRepository, socialEncounterRepository, locationEncounterRepository)
 }
 
