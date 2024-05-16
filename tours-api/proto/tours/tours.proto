@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+option go_package = "proto/tours";
+import "google/protobuf/timestamp.proto";
+
+service ToursService {
+  rpc CreateTour(TourDto) returns (ActionResponse) {
+
+  }
+
+  rpc GetToursByAuthor(GetToursByAuthorRequest) returns (ListTourDtoResponse) {
+
+  }
+
+  rpc GetAllTours(GetAllToursRequest) returns (ListTourDtoResponse) {
+
+  }
+
+  rpc AddEquipment(AddEquipmentRequest) returns (ActionResponse) {
+
+  }
+
+  rpc RemoveEquipment(RemoveEquipmentRequest) returns (ActionResponse) {
+
+  }
+
+  rpc GetTourDetails(GetTourDetailsRequest) returns (TourDto) {
+
+  }
+
+  rpc DeleteTour(DeleteTourRequest) returns (ActionResponse) {
+
+  }
+
+  rpc PublishTour(PublishTourRequest) returns (ActionResponse) {
+
+  }
+
+  rpc ArchiveTour(ArchiveTourRequest) returns (ActionResponse) {
+
+  }
+
+  rpc UpdateTour(UpdateTourRequest) returns (ActionResponse) {
+
+  }
+}
+
+message GetAllToursRequest {}
+
+message GetToursByAuthorRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListTourDtoResponse {
+  repeated TourDto tours = 1;
+}
+
+message AddEquipmentRequest {
+  int32 tour_id = 1;
+  int32 equipment_id = 2;
+}
+
+message RemoveEquipmentRequest {
+  int32 tour_id = 1;
+  int32 equipment_id = 2;
+}
+
+message GetTourDetailsRequest {
+  int32 id = 1;
+}
+
+message DeleteTourRequest {
+  int32 id = 1;
+}
+
+message PublishTourRequest {
+  int32 id = 1;
+}
+
+message ArchiveTourRequest {
+  int32 id = 1;
+}
+
+message UpdateTourRequest {
+  int32 id = 1;
+  TourDto tour = 2;
+}
+
+message ActionResponse{
+  bool succes = 1;
+}
+
+message TourDto {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string demandingness_level = 4;
+  double price = 5;
+  repeated string tags = 6;
+  int32 author_id = 7;
+  string status = 8;
+  repeated EquipmentDto equipment = 9;
+  repeated CheckpointDto checkpoints = 10;
+  repeated PublishedTourDto published_tours = 11;
+  repeated ArchivedTourDto archived_tours = 12;
+  repeated TourTimeDto tour_times = 13;
+  repeated TourRatingDto tour_ratings = 14;
+  bool closed = 15;
+}
+
+message EquipmentDto {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message CheckpointDto {
+  int64 id = 1;
+  int64 tour_id = 2;
+  int64 author_id = 3;
+  double longitude = 4;
+  double latitude = 5;
+  string name = 6;
+  string description = 7;
+  repeated string pictures = 8;
+  double required_time_in_seconds = 9;
+  CheckpointSecretDto checkpoint_secret = 10;
+  int64 encounter_id = 11;
+  bool is_secret_prerequisite = 12;
+}
+
+message CheckpointSecretDto {
+  string description = 1;
+  repeated string pictures = 2;
+}
+
+message PublishedTourDto {
+  google.protobuf.Timestamp publishing_date = 1;
+}
+
+message ArchivedTourDto {
+  google.protobuf.Timestamp archiving_date = 1;
+}
+
+message TourTimeDto {
+  double time_in_seconds = 1;
+  double distance = 2;
+  string transportation = 3;
+}
+
+
+message TourRatingDto {
+  int64 id = 1;
+  int32 rating = 2;
+  string comment = 3;
+  int32 tourist_id = 4;
+  int32 tour_id = 5;
+  google.protobuf.Timestamp tour_date = 6;
+  google.protobuf.Timestamp creation_date = 7;
+  repeated string image_names = 8;
+}
