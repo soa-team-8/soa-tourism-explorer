@@ -483,6 +483,90 @@ func (s *Server) CreateCheckpointSecret(ctx context.Context, in *checkpoints.Cre
 	return &updatedCheckpointDto, nil
 }
 
+func (s *Server) GetAllByTour(ctx context.Context, in *checkpoints.GetCheckpointsByTourRequest) (*checkpoints.ListCheckpointDtoResponse, error) {
+	checkpointsByTour, err := s.CheckpointService.GetAllByTourID(uint64(in.GetId()))
+	if err != nil {
+		// Obrada greške ako je potrebno
+		return nil, err
+	}
+
+	// Mapiranje checkpointova na CheckpointDto2
+	var checkpointDtos []*checkpoints.CheckpointDto2
+	for _, checkpoint := range checkpointsByTour {
+		checkpointDto := &checkpoints.CheckpointDto2{
+			Id:                    int64(checkpoint.ID),
+			TourId:                int64(checkpoint.TourID),
+			AuthorId:              int64(checkpoint.AuthorID),
+			Longitude:             checkpoint.Longitude,
+			Latitude:              checkpoint.Latitude,
+			Name:                  checkpoint.Name,
+			Description:           checkpoint.Description,
+			Pictures:              checkpoint.Pictures,
+			RequiredTimeInSeconds: checkpoint.RequiredTimeInSeconds,
+			EncounterId:           int64(checkpoint.EncounterID),
+			IsSecretPrerequisite:  checkpoint.IsSecretPrerequisite,
+		}
+
+		// Mapiranje CheckpointSecret na CheckpointSecretDto2
+		checkpointSecretDto := &checkpoints.CheckpointSecretDto2{
+			Description: checkpoint.CheckpointSecret.Description,
+			Pictures:    checkpoint.CheckpointSecret.Pictures,
+		}
+		checkpointDto.CheckpointSecret = checkpointSecretDto
+
+		checkpointDtos = append(checkpointDtos, checkpointDto)
+	}
+
+	// Kreiranje ListCheckpointDtoResponse sa mapiranim checkpointima
+	response := &checkpoints.ListCheckpointDtoResponse{
+		Checkpoints: checkpointDtos,
+	}
+
+	return response, nil
+}
+
+func (s *Server) GetAllPagedCheckpoints(ctx context.Context, in *checkpoints.GetAllPagedCheckpointsRequest) (*checkpoints.ListCheckpointDtoResponse, error) {
+	checkpointsByTour, err := s.CheckpointService.GetAll()
+	if err != nil {
+		// Obrada greške ako je potrebno
+		return nil, err
+	}
+
+	// Mapiranje checkpointova na CheckpointDto2
+	var checkpointDtos []*checkpoints.CheckpointDto2
+	for _, checkpoint := range checkpointsByTour {
+		checkpointDto := &checkpoints.CheckpointDto2{
+			Id:                    int64(checkpoint.ID),
+			TourId:                int64(checkpoint.TourID),
+			AuthorId:              int64(checkpoint.AuthorID),
+			Longitude:             checkpoint.Longitude,
+			Latitude:              checkpoint.Latitude,
+			Name:                  checkpoint.Name,
+			Description:           checkpoint.Description,
+			Pictures:              checkpoint.Pictures,
+			RequiredTimeInSeconds: checkpoint.RequiredTimeInSeconds,
+			EncounterId:           int64(checkpoint.EncounterID),
+			IsSecretPrerequisite:  checkpoint.IsSecretPrerequisite,
+		}
+
+		// Mapiranje CheckpointSecret na CheckpointSecretDto2
+		checkpointSecretDto := &checkpoints.CheckpointSecretDto2{
+			Description: checkpoint.CheckpointSecret.Description,
+			Pictures:    checkpoint.CheckpointSecret.Pictures,
+		}
+		checkpointDto.CheckpointSecret = checkpointSecretDto
+
+		checkpointDtos = append(checkpointDtos, checkpointDto)
+	}
+
+	// Kreiranje ListCheckpointDtoResponse sa mapiranim checkpointima
+	response := &checkpoints.ListCheckpointDtoResponse{
+		Checkpoints: checkpointDtos,
+	}
+
+	return response, nil
+}
+
 func (s *Server) GetAllEquipment(ctx context.Context, in *equipments.GetAllEquipmentRequest) (*equipments.EquipmentListDto, error) {
 	// Dobijamo stvarnu listu opreme iz servisa
 	equipmentsReal, err := s.EquipmentService.GetAll()
