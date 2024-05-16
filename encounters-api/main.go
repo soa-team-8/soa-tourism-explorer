@@ -5,6 +5,7 @@ import (
 	"encounters/application"
 	"encounters/dto"
 	"encounters/model"
+	"encounters/proto/encounter_requests"
 	"encounters/proto/encounters"
 	"encounters/proto/tourist_encounters"
 	"encounters/repo/mongoDB"
@@ -36,8 +37,11 @@ func main() {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	encounters.RegisterEncounterServiceServer(grpcServer, Server{EncounterService: createEncounterService(mongoClient)})
-	tourist_encounters.RegisterTouristEncounterServiceServer(grpcServer, Server{EncounterService: createEncounterService(mongoClient)})
+	server := Server{EncounterService: createEncounterService(mongoClient), EncounterRequestService: createEncounterRequestService(mongoClient)}
+
+	encounters.RegisterEncounterServiceServer(grpcServer, server)
+	tourist_encounters.RegisterTouristEncounterServiceServer(grpcServer, server)
+	encounter_requests.RegisterEncounterRequestServiceServer(grpcServer, server)
 
 	reflection.Register(grpcServer)
 	grpcServer.Serve(lis)
@@ -54,8 +58,10 @@ func main() {
 type Server struct {
 	encounters.UnimplementedEncounterServiceServer
 	tourist_encounters.UnimplementedTouristEncounterServiceServer
+	encounter_requests.UnimplementedEncounterRequestServiceServer
 
-	EncounterService *service.EncounterService
+	EncounterService        *service.EncounterService
+	EncounterRequestService *service.EncounterRequestService
 }
 
 func (s Server) CreateEncounter(ctx context.Context, request *encounters.CreateEncounterRequest) (*encounters.EncounterResponse, error) {
@@ -308,6 +314,92 @@ func (s Server) TouristGetAllEncounters(ctx context.Context, request *tourist_en
 	return &tourist_encounters.TouristGetAllEncountersResponse{Encounters: responseEncounters}, nil
 }
 
+func (s Server) CreateEncounterRequest(ctx context.Context, request *encounter_requests.CreateEncounterRequestDto) (*encounter_requests.EncounterRequestResponseDto, error) {
+	encounterRequest := request.EncounterRequest
+
+	encounterRequestDto := dto.EncounterRequestDto{
+		ID:          uint64(encounterRequest.Id),
+		EncounterId: uint64(encounterRequest.EncounterId),
+		TouristId:   uint64(encounterRequest.TouristId),
+		Status:      encounterRequest.Status,
+	}
+
+	_, err := s.EncounterRequestService.Create(encounterRequestDto)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &encounter_requests.EncounterRequestResponseDto{
+		EncounterRequest: encounterRequest,
+	}
+
+	return response, nil
+}
+
+func (s Server) GetAllEncounterRequests(ctx context.Context, request *encounter_requests.GetAllEncounterRequestsRequest) (*encounter_requests.GetAllEncounterRequestsResponse, error) {
+	encounterRequests, err := s.EncounterRequestService.GetAll()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var encounterRequestsResp []*encounter_requests.EncounterRequestDto
+
+	for _, encounterReq := range encounterRequests {
+		encReq := encounter_requests.EncounterRequestDto{
+			Id:          int32(encounterReq.ID),
+			EncounterId: int64(encounterReq.EncounterId),
+			TouristId:   int64(encounterReq.TouristId),
+			Status:      encounterReq.Status,
+		}
+
+		encounterRequestsResp = append(encounterRequestsResp, &encReq)
+	}
+
+	return &encounter_requests.GetAllEncounterRequestsResponse{EncounterRequests: encounterRequestsResp}, nil
+}
+
+func (s Server) AcceptEncounterRequest(ctx context.Context, request *encounter_requests.AcceptEncounterRequestDto) (*encounter_requests.EncounterRequestResponseDto, error) {
+	acceptedReq, err := s.EncounterRequestService.Accept(int(request.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	encReq := encounter_requests.EncounterRequestDto{
+		Id:          int32(acceptedReq.ID),
+		EncounterId: int64(acceptedReq.EncounterId),
+		TouristId:   int64(acceptedReq.TouristId),
+		Status:      acceptedReq.Status,
+	}
+
+	response := encounter_requests.EncounterRequestResponseDto{
+		EncounterRequest: &encReq,
+	}
+
+	return &response, nil
+}
+
+func (s Server) RejectEncounterRequest(ctx context.Context, request *encounter_requests.RejectEncounterRequestDto) (*encounter_requests.EncounterRequestResponseDto, error) {
+	acceptedReq, err := s.EncounterRequestService.Reject(int(request.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	encReq := encounter_requests.EncounterRequestDto{
+		Id:          int32(acceptedReq.ID),
+		EncounterId: int64(acceptedReq.EncounterId),
+		TouristId:   int64(acceptedReq.TouristId),
+		Status:      acceptedReq.Status,
+	}
+
+	response := encounter_requests.EncounterRequestResponseDto{
+		EncounterRequest: &encReq,
+	}
+
+	return &response, nil
+}
+
 func toBigIntSlice(ids []int32) *model.BigIntSlice {
 	var bigIntSlice model.BigIntSlice
 	for _, id := range ids {
@@ -322,4 +414,10 @@ func createEncounterService(mongoClient *mongo.Client) *service.EncounterService
 	socialEncounterRepository := mongoDB.NewSocialEncounterRepository(mongoClient)
 	locationEncounterRepository := mongoDB.NewHiddenLocationRepository(mongoClient)
 	return service.NewEncounterService(encounterRepository, encounterRequestRepository, socialEncounterRepository, locationEncounterRepository)
+}
+
+func createEncounterRequestService(mongoClient *mongo.Client) *service.EncounterRequestService {
+	encounterRequestRepository := mongoDB.NewEncounterRequestRepository(mongoClient)
+	encounterRepository := mongoDB.NewEncounterRepository(mongoClient)
+	return service.NewEncounterRequestService(encounterRequestRepository, encounterRepository)
 }
