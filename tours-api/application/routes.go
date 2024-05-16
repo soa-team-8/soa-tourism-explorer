@@ -44,10 +44,10 @@ func (a *App) loadRoutes() {
 func (a *App) loadTourRoutes(router *mux.Router) {
 	tourService := &service.TourService{
 		TourRepository: &repository.TourRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 		EquipmentRepository: &repository.EquipmentRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -70,7 +70,7 @@ func (a *App) loadTourRoutes(router *mux.Router) {
 func (a *App) loadEquipmentRoutes(router *mux.Router) {
 	equipmentService := &service.EquipmentService{
 		EquipmentRepository: &repository.EquipmentRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -90,7 +90,7 @@ func (a *App) loadEquipmentRoutes(router *mux.Router) {
 func (a *App) loadCheckpointRoutes(router *mux.Router) {
 	checkpointService := &service.CheckpointService{
 		CheckpointRepository: &repository.CheckpointRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -112,10 +112,10 @@ func (a *App) loadCheckpointRoutes(router *mux.Router) {
 func (a *App) loadTourRatingRoutes(router *mux.Router) {
 	tourRatingService := &service.TourRatingService{
 		TourRatingRepository: &repository.TourRatingRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 		TourExecutionRepository: &repository.TourExecutionRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -133,7 +133,7 @@ func (a *App) loadTourRatingRoutes(router *mux.Router) {
 func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 	tourExecutionService := &service.TourExecutionService{
 		TourExecutionRepository: &repository.TourExecutionRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -150,10 +150,10 @@ func (a *App) loadTourExecutionRoutes(router *mux.Router) {
 func (a *App) loadReportedIssuesRoutes(router *mux.Router) {
 	reportedIssueService := &service.ReportedIssueService{
 		ReportedIssueRepository: &repository.ReportedIssueRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 		TourRepository: &repository.TourRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 
@@ -176,10 +176,10 @@ func (a *App) loadReportedIssuesRoutes(router *mux.Router) {
 func (a *App) loadPublishedToursRoutes(router *mux.Router) {
 	tourService := &service.TourService{
 		TourRepository: &repository.TourRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 		TourRatingRepository: &repository.TourRatingRepository{
-			DB: a.db,
+			DB: a.Db,
 		},
 	}
 

@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+option go_package = "proto/checkpoints";
+
+service CheckpointsService {
+  rpc CreateCheckpoint(CreateCheckpointRequest) returns (CheckpointDto2) {
+
+  }
+
+  rpc CreateCheckpointSecret(CreateCheckpointSecretRequest) returns (CheckpointDto2) {
+
+  }
+
+  rpc UpdateCheckpointSecret(UpdateCheckpointSecretRequest) returns (CheckpointDto2) {
+
+  }
+
+  rpc DeleteCheckpoint(DeleteCheckpointRequest) returns (ActionResponse2) {
+
+  }
+
+  rpc GetAllByTour(GetCheckpointsByTourRequest) returns (ListCheckpointDtoResponse) {
+
+  }
+
+  rpc GetById(GetCheckpointDetailsRequest) returns (CheckpointDto2) {
+
+  }
+
+  rpc UpdateCheckpoint(UpdateCheckpointRequest) returns (CheckpointDto2) {
+
+  }
+
+  rpc GetAllPagedCheckpoints(GetAllPagedCheckpointsRequest) returns (ListCheckpointDtoResponse) {
+
+  }
+}
+
+message ActionResponse2{
+  bool succes = 1;
+}
+
+message CreateCheckpointRequest {
+  CheckpointDto2 checkpoint = 1;
+  string status = 2;
+}
+
+message CreateCheckpointSecretRequest {
+  CheckpointSecretDto2 checkpoint_secret = 1;
+  int32 checkpoint_id = 2;
+}
+
+message UpdateCheckpointSecretRequest {
+  CheckpointSecretDto2 checkpoint_secret = 1;
+  int32 checkpoint_id = 2;
+}
+
+message DeleteCheckpointRequest {
+  int32 id = 1;
+}
+
+message GetCheckpointsByTourRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 id = 3;
+}
+
+message GetCheckpointDetailsRequest {
+  int32 id = 1;
+}
+
+message UpdateCheckpointRequest {
+  CheckpointDto2 checkpoint = 1;
+  int32 id = 2;
+}
+
+message GetAllPagedCheckpointsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListCheckpointDtoResponse {
+  repeated CheckpointDto2 checkpoints = 1;
+}
+
+
+message CheckpointDto2 {
+  int64 id = 1;
+  int64 tour_id = 2;
+  int64 author_id = 3;
+  double longitude = 4;
+  double latitude = 5;
+  string name = 6;
+  string description = 7;
+  repeated string pictures = 8;
+  double required_time_in_seconds = 9;
+  CheckpointSecretDto2 checkpoint_secret = 10;
+  int64 encounter_id = 11;
+  bool is_secret_prerequisite = 12;
+}
+
+message CheckpointSecretDto2 {
+  string description = 1;
+  repeated string pictures = 2;
+}
+

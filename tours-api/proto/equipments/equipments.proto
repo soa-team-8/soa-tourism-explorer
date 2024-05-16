@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+option go_package = "proto/equipments";
+
+service EquipmentsService {
+  rpc GetAllPagedEquipments(GetAllPagedEquipmentRequest) returns (PagedEquipmentDto) {
+
+  }
+
+  rpc GetAllEquipment(GetAllEquipmentRequest) returns (EquipmentListDto) {
+
+  }
+
+  rpc CreateEquipment(CreateEquipmentRequest) returns (EquipmentDto3) {
+
+  }
+
+  rpc UpdateEquipment(UpdateEquipmentRequest) returns (EquipmentDto3) {
+
+
+  }
+
+  rpc DeleteEquipment(DeleteEquipmentRequest) returns (ActionResponse3) {
+
+  }
+}
+
+message ActionResponse3{
+  bool succes = 1;
+}
+
+message GetAllPagedEquipmentRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+message PagedEquipmentDto {
+  repeated EquipmentDto3 items = 1;
+}
+
+message GetAllEquipmentRequest {}
+
+message EquipmentListDto {
+  repeated EquipmentDto3 items = 1;
+}
+
+message CreateEquipmentRequest {
+  EquipmentDto3 equipment = 1;
+}
+
+message UpdateEquipmentRequest {
+  int32 id = 1;
+  EquipmentDto3 equipment = 2;
+}
+
+message DeleteEquipmentRequest {
+  int32 id = 1;
+}
+
+
+message EquipmentDto3 {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+}

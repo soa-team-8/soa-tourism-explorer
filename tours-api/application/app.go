@@ -13,7 +13,7 @@ import (
 
 type App struct {
 	router http.Handler
-	db     *gorm.DB
+	Db     *gorm.DB
 	config Config
 }
 
@@ -74,7 +74,7 @@ func New(config Config) *App {
 	}
 
 	app := &App{
-		db:     db,
+		Db:     db,
 		config: config,
 	}
 
