@@ -1,7 +1,7 @@
 package application
 
 import (
-	handlers "followers/handler"
+	handlers "followers-api/handler"
 	"github.com/gorilla/mux"
 	"net/http"
 )

@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"followers/model"
-	repository "followers/repository"
+	"followers-api/model"
+	repository "followers-api/repository"
 )
 
 type SocialProfileService struct {

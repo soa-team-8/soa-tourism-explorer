@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"followers/model"
-	"followers/service"
+	"followers-api/model"
+	"followers-api/service"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
