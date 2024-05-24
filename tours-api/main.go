@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"gorm.io/gorm"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -20,6 +23,54 @@ import (
 	"tours/repository"
 	"tours/service"
 )
+
+var (
+	equipmentRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "equipment_requests_total",
+			Help: "Total number of equipment requests",
+		},
+		[]string{"status"},
+	)
+	equipmentRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "equipment_request_duration_seconds",
+			Help:    "Duration of equipment requests",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"status"},
+	)
+)
+
+func init() {
+	// Register metrics with Prometheus
+	prometheus.MustRegister(equipmentRequests)
+	prometheus.MustRegister(equipmentRequestDuration)
+}
+
+var (
+	tourRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "tour_requests_total",
+			Help: "Total number of tour requests",
+		},
+		[]string{"status"},
+	)
+	tourRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "tour_request_duration_seconds",
+			Help:    "Duration of tour requests",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"status"},
+	)
+)
+
+func init() {
+	// Register metrics with Prometheus
+	prometheus.MustRegister(tourRequests)
+	prometheus.MustRegister(tourRequestDuration)
+}
 
 func main() {
 	app := application.New(application.LoadConfig())
@@ -36,7 +87,10 @@ func main() {
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-
+	http.Handle("/metrics", promhttp.Handler())
+	go func() {
+		log.Fatal(http.ListenAndServe(":2112", nil))
+	}()
 	tours.RegisterToursServiceServer(grpcServer, &Server{TourService: createTourService(postgresClient)})
 	checkpoints.RegisterCheckpointsServiceServer(grpcServer, &Server{CheckpointService: createCheckpointService(postgresClient)})
 	equipments.RegisterEquipmentsServiceServer(grpcServer, &Server{EquipmentService: createEquipmentService(postgresClient)})
@@ -304,6 +358,16 @@ func (s *Server) DeleteTour(ctx context.Context, in *tours.DeleteTourRequest) (*
 }
 
 func (s *Server) GetAllTours(ctx context.Context, in *tours.GetAllToursRequest) (*tours.ListTourDtoResponse, error) {
+	startTime := time.Now()
+
+	statusLabel := "success"
+
+	defer func() {
+		duration := time.Since(startTime).Seconds()
+		tourRequestDuration.WithLabelValues(statusLabel).Observe(duration)
+		tourRequests.WithLabelValues(statusLabel).Inc()
+	}()
+
 	var toursReal []model.Tour
 	toursReal, _ = s.TourService.GetAll()
 
@@ -568,17 +632,25 @@ func (s *Server) GetAllPagedCheckpoints(ctx context.Context, in *checkpoints.Get
 }
 
 func (s *Server) GetAllEquipment(ctx context.Context, in *equipments.GetAllEquipmentRequest) (*equipments.EquipmentListDto, error) {
-	// Dobijamo stvarnu listu opreme iz servisa
+	startTime := time.Now()
+
+	statusLabel := "success"
+
+	defer func() {
+		duration := time.Since(startTime).Seconds()
+		equipmentRequestDuration.WithLabelValues(statusLabel).Observe(duration)
+		equipmentRequests.WithLabelValues(statusLabel).Inc()
+	}()
+
 	equipmentsReal, err := s.EquipmentService.GetAll()
 	if err != nil {
-		// Obrada greške ako je potrebno
+		statusLabel = "error"
+		equipmentRequests.WithLabelValues(statusLabel).Inc()
 		return nil, err
 	}
 
-	// Kreiramo praznu listu DTO opreme
 	var eqDtos []*equipments.EquipmentDto3
 
-	// Mapiranje stvarne opreme na DTO opremu
 	for _, equipment := range equipmentsReal {
 		eqDto := &equipments.EquipmentDto3{
 			Id:          int32(equipment.ID),
@@ -588,11 +660,9 @@ func (s *Server) GetAllEquipment(ctx context.Context, in *equipments.GetAllEquip
 		eqDtos = append(eqDtos, eqDto)
 	}
 
-	// Kreiranje EquipmentListDto sa mapiranom opremom
 	equipmentListDto := &equipments.EquipmentListDto{
 		Items: eqDtos,
 	}
 
-	// Vraćamo listu DTO opreme kao odgovor
 	return equipmentListDto, nil
 }
