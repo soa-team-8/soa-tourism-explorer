@@ -46,6 +46,10 @@ func main() {
 	reflection.Register(grpcServer)
 	grpcServer.Serve(lis)
 
+	loggingFile, err := os.OpenFile("logging/var/encounter-api.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	logger := log.New(loggingFile, "[encounter-api] ", log.LstdFlags)
+	logger.Println("API")
+
 	defer cancel()
 
 	err = app.Start(ctx)
