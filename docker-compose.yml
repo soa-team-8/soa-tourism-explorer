@@ -1,7 +1,7 @@
 x-logging: &fluent-bit
   driver: fluentd
   options:
-    fluentd-address: 172.21.0.8:24224
+    fluentd-address: 172.21.0.7:24224
 
 
 services:
@@ -41,7 +41,7 @@ services:
       - encounters_database
     environment:
       MONGODB_ADDR: "mongodb://encounters_database:27017"
-      SERVER_PORT: 3030
+      SERVER_PORT: 3031
 
   tours_database:
     image: postgres

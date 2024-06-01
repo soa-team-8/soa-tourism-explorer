@@ -11,25 +11,95 @@ import (
 	"encounters/repo/mongoDB"
 	"encounters/service"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
-	"net"
+	netsock "net"
 	"os"
 	"os/signal"
+	"time"
 )
+
+// var loggingFile, err = os.OpenFile("logging/var/encounter-api.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+var logger = log.New(os.Stdout, "[encounter-api] ", log.LstdFlags)
+
+var (
+	cpuUsage = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "host_cpu_usage_percent",
+		Help: "Current CPU usage percentage",
+	})
+	memUsage = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "host_mem_usage_percent",
+		Help: "Current memory usage percentage",
+	})
+	diskUsage = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "host_disk_usage_percent",
+		Help: "Current disk usage percentage",
+	})
+	netSent = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "host_network_bytes_sent_total",
+		Help: "Total bytes sent over the network",
+	})
+	netRecv = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "host_network_bytes_received_total",
+		Help: "Total bytes received over the network",
+	})
+)
+
+func collectMetrics() {
+	for {
+		// Collect CPU usage
+		cpuPercent, err := cpu.Percent(time.Second, false)
+		if err == nil && len(cpuPercent) > 0 {
+			cpuUsage.Set(cpuPercent[0])
+		}
+
+		// Collect memory usage
+		virtualMem, err := mem.VirtualMemory()
+		if err == nil {
+			memUsage.Set(virtualMem.UsedPercent)
+		}
+
+		// Collect disk usage
+		diskInfo, err := disk.Usage("/")
+		if err == nil {
+			diskUsage.Set(diskInfo.UsedPercent)
+		}
+
+		// Collect network usage
+		netIO, err := net.IOCounters(false)
+		if err == nil && len(netIO) > 0 {
+			netSent.Add(float64(netIO[0].BytesSent))
+			netRecv.Add(float64(netIO[0].BytesRecv))
+		}
+
+		time.Sleep(10 * time.Second) // Adjust the collection interval as needed
+	}
+}
 
 func main() {
 	app := application.New(application.LoadConfig())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
+	router := mux.NewRouter().StrictSlash(true)
+	router.Handle("/metrics", promhttp.Handler())
+	go collectMetrics()
+
 	mongoClient := app.MongoClient
 	//EncounterService = createEncounterService(mongoClient)
 
-	lis, err := net.Listen("tcp", "localhost:3030")
+	lis, err := netsock.Listen("tcp", "localhost:3031")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -46,8 +116,6 @@ func main() {
 	reflection.Register(grpcServer)
 	grpcServer.Serve(lis)
 
-	loggingFile, err := os.OpenFile("logging/var/encounter-api.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	logger := log.New(loggingFile, "[encounter-api] ", log.LstdFlags)
 	logger.Println("API")
 
 	defer cancel()
@@ -75,6 +143,8 @@ func (s Server) CreateEncounter(ctx context.Context, request *encounters.CreateE
 	requiredPeople := int(encounterDto.RequiredPeople)
 	activeTouristsIDsBigSlice := toBigIntSlice(encounterDto.ActiveTouristsIds)
 
+	logger.Printf("Received CreateEncounter request: %+v", encounterDto)
+
 	_, err := s.EncounterService.CreateByAuthor(dto.EncounterDto{
 		AuthorID:          uint64(encounterDto.AuthorId),
 		ID:                uint64(encounterDto.Id),
@@ -94,6 +164,7 @@ func (s Server) CreateEncounter(ctx context.Context, request *encounters.CreateE
 	})
 
 	if err != nil {
+		logger.Printf("Error creating encounter: %v", err)
 		return nil, err
 	}
 
@@ -101,8 +172,9 @@ func (s Server) CreateEncounter(ctx context.Context, request *encounters.CreateE
 		Encounter: encounterDto,
 	}
 
-	return response, nil
+	logger.Printf("Successfully created encounter: %+v", response)
 
+	return response, nil
 }
 
 func (s Server) DeleteEncounter(ctx context.Context, request *encounters.DeleteEncounterRequest) (*encounters.DeleteEncounterResponse, error) {
