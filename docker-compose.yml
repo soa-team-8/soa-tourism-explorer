@@ -1,4 +1,8 @@
-version: "3.7"
+x-logging: &fluent-bit
+  driver: fluentd
+  options:
+    fluentd-address: 172.21.0.8:24224
+
 
 services:
   tours-api:
@@ -9,7 +13,9 @@ services:
     container_name: tours_api_container
     restart: always
     networks:
-      - services_network
+      - soa-tourism-explorer
+      - monitoring
+    logging: *fluent-bit
     ports:
       - "3000:3000"
     depends_on:
@@ -26,21 +32,25 @@ services:
     container_name: encounters_api_container
     restart: always
     networks:
-      - services_network
+      - soa-tourism-explorer
+      - monitoring
+    logging: *fluent-bit
     ports:
-      - "3030:3030"
+      - "3031:3031"
     depends_on:
       - encounters_database
     environment:
       MONGODB_ADDR: "mongodb://encounters_database:27017"
-      SERVER_PORT: 3030
+      SERVER_PORT: 3031
 
   tours_database:
     image: postgres
     container_name: tours_db_container
     restart: always
     networks:
-      - services_network
+      - soa-tourism-explorer
+      - monitoring
+    logging: *fluent-bit
     ports:
       - "5432:5432"
     environment:
@@ -54,7 +64,9 @@ services:
     container_name: encounters_db_container  # Promenjeno ime kontejnera
     restart: always
     networks:
-      - services_network
+      - soa-tourism-explorer
+      - monitoring
+    logging: *fluent-bit
     ports:
       - "27017:27017"  # MongoDB port
     volumes:
@@ -65,7 +77,8 @@ services:
     container_name: mongo_express_container
     restart: always
     networks:
-      - services_network
+      - soa-tourism-explorer
+      - monitoring
     ports:
       - "8081:8081"
     environment:
@@ -73,6 +86,7 @@ services:
       ME_CONFIG_MONGODB_PORT: "27017"
     depends_on:
       - encounters_database
+    logging: *fluent-bit
 
 volumes:
   tours_database_data:
@@ -82,6 +96,8 @@ volumes:
     name: encounters_database_volume
 
 networks:
-  services_network:
-    name: services_network
+  soa-tourism-explorer:
+    name: soa-tourism-explorer
     driver: bridge
+  monitoring:
+    external: true
